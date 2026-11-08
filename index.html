@@ -367,6 +367,48 @@ h1.greet{margin-top:2px;margin-bottom:6px}
 .figs.today .fig.done b{color:var(--green)}
 .startbar{position:sticky;bottom:calc(58px + env(safe-area-inset-bottom,0px));margin-top:20px;padding:12px 0 6px;background:linear-gradient(to bottom, transparent, var(--bg) 35%);z-index:3}
 .startbar .btn{box-shadow:0 6px 20px rgba(0,122,255,.3)}
+
+/* Willkommen */
+.welcome{min-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px;padding-top:6vh}
+.w-greet{font-family:var(--display);font-size:40px;font-weight:800;line-height:1.08;margin:4px 4px 0;letter-spacing:-.01em}
+.w-greet span{display:block}
+.w-today{background:var(--surface);border-radius:20px;padding:16px 18px}
+.w-label{font-weight:600;font-size:17px;margin-bottom:6px}
+.w-today ul{list-style:none;margin:0;padding:0}
+.w-today li{padding:7px 0;font-size:17px;border-top:.5px solid var(--line)}
+.w-today li:first-child{border-top:0}
+.w-today li b{font-family:var(--display);font-size:20px;margin-right:2px}
+.w-today li.done{color:var(--green)}
+.w-bottom{margin-top:auto;padding-bottom:6px}
+.w-go{min-height:56px;font-size:18px;box-shadow:0 8px 24px rgba(0,122,255,.3)}
+/* Serie */
+.streak{border-radius:20px;padding:16px 18px;background:linear-gradient(135deg,#FF9500,#FF5E3A);color:#fff;box-shadow:0 10px 28px rgba(255,94,58,.28)}
+.streak.compact{box-shadow:none}
+.st-top{display:flex;align-items:center;gap:14px}
+.st-fire{font-size:44px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
+.st-fire.off{filter:grayscale(1) opacity(.7)}
+.st-num{font-family:var(--display);font-size:34px;font-weight:800;line-height:1}
+.st-num span{font-size:17px;font-weight:600}
+.st-sub{font-size:14px;opacity:.92;margin-top:4px}
+.st-next{margin-top:14px}
+.st-bar{height:8px;border-radius:4px;background:rgba(255,255,255,.3);overflow:hidden}
+.st-bar i{display:block;height:100%;border-radius:4px;background:#fff}
+.st-ms{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:14px;font-weight:600}
+.st-ms span{font-weight:400;opacity:.9;white-space:nowrap}
+.fstreak{margin:2px 0 6px;font-weight:600;color:var(--orange)}
+.figs.two{grid-template-columns:1fr 1fr;margin-top:10px}
+.calbox{margin-top:10px;background:var(--surface);border-radius:16px;padding:12px 14px}
+.callbl{font-size:13px;color:var(--muted);margin-bottom:8px}
+.cal{display:grid;grid-template-columns:repeat(14,1fr);gap:5px}
+.cal i{aspect-ratio:1;border-radius:5px;background:var(--fill)}
+.cal i.on{background:linear-gradient(135deg,#FF9500,#FF5E3A)}
+.cal i.now{box-shadow:inset 0 0 0 1.5px var(--orange)}
+.badges{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.bdg{background:var(--surface);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bdg .be{font-size:26px;line-height:1;filter:grayscale(1);opacity:.35}
+.bdg .bn2{font-size:11px;color:var(--muted);white-space:nowrap}
+.bdg.got .be{filter:none;opacity:1}
+.bdg.got .bn2{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -422,7 +464,7 @@ const catRow = (e, r) => e.t === 'art'
   ? { a:r[0], b:r[1], src:r[2] || e.name, lv:r[3] || null, h:r[4] || '' }
   : { a:r[0], b:r[1], src:r[2] || e.name };
 const INT = [0,1,2,4,8,16,32,64], MAX = 7;
-let S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null };
+let S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null, streak:null, days:[] };
 let FB = null, U = null, userEmail = '', unsubs = [], cardMap = new Map();
 let ready = { p:false, c:false, m:false }, needsSetup = false, sync = { pending:false }, setupDone = false, migrated = false;
 let view = 'learn', session = null, bootMsg = 'Lädt …', slowTimer = null;
@@ -514,7 +556,7 @@ const R = {
 function syncErr(e){ console.error(e); toast('Speichern fehlgeschlagen. Bitte neu laden.'); }
 function saveCard(c){ const { id, ...d } = c; FB.set(R.card(id), d).catch(syncErr); }
 function saveProject(p){ const { id, ...d } = p; FB.set(R.project(id), d).catch(syncErr); }
-function saveMeta(){ FB.set(R.meta(), { log:S.log, sel:S.sel, lastSrc:S.lastSrc || '', name:S.name || '', act:S.act || null }).catch(syncErr); }
+function saveMeta(){ FB.set(R.meta(), { log:S.log, sel:S.sel, lastSrc:S.lastSrc || '', name:S.name || '', act:S.act || null, streak:S.streak || null, days:S.days || [] }).catch(syncErr); }
 async function runOps(ops, onProg){
   for (let i = 0; i < ops.length; i += 400){
     const b = FB.batch();
@@ -532,7 +574,7 @@ async function getImg(id){
 function stopListen(){ unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = []; }
 function listen(){
   stopListen(); cardMap.clear(); imgCache.clear();
-  S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null };
+  S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null, streak:null, days:[] };
   ready = { p:false, c:false, m:false }; needsSetup = false;
   const onErr = e => { console.error(e); bootMsg = 'Die Daten konnten nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu.'; changed(); };
   unsubs.push(FB.listenCol(R.projects(), s => {
@@ -548,7 +590,7 @@ function listen(){
     changed();
   }, onErr));
   unsubs.push(FB.listenDoc(R.meta(), s => {
-    if (s.exists){ S.log = s.data.log || {}; S.sel = s.data.sel || []; S.lastSrc = s.data.lastSrc || ''; S.name = s.data.name || ''; S.act = s.data.act || null; needsSetup = false; ready.m = true; }
+    if (s.exists){ S.log = s.data.log || {}; S.sel = s.data.sel || []; S.lastSrc = s.data.lastSrc || ''; S.name = s.data.name || ''; S.act = s.data.act || null; S.streak = s.data.streak || null; S.days = s.data.days || []; needsSetup = false; ready.m = true; }
     else if (!s.fromCache){ needsSetup = true; ready.m = true; }
     changed();
   }, onErr));
@@ -603,6 +645,7 @@ function render(){
   if (!isReady()) return renderMsg(bootMsg);
   if (!migrated){ migrated = true; S.projects.forEach(p => { if (!p.cat){ const c = catOf(p); if (c) saveProject({ ...p, cat:c }); } }); }
   if (session) return renderSession();
+  if (showWelcome){ document.body.classList.add('no-tabs'); return renderWelcome(); }
   if (view === 'learn') renderLearn();
   else if (view === 'words') wf.detail && proj(wf.detail) ? renderWords() : renderLists();
   else renderStats();
@@ -642,6 +685,23 @@ function renderLogin(){
 }
 
 /* ---------- Learn home ---------- */
+const MILESTONES = [[3,'🌱'],[7,'🔥'],[14,'⭐'],[30,'🏅'],[50,'💎'],[100,'🏆'],[200,'🚀'],[365,'👑'],[500,'🌟'],[1000,'🦄']];
+const DAY_GOAL = 10;
+function streakNow(){ const s = S.streak; if (!s) return 0; return (s.last === today() || s.last === addDays(-1)) ? (s.cur || 0) : 0; }
+const countsToday = () => !!(S.streak && S.streak.last === today());
+function nextMilestone(n){ return MILESTONES.find(m => m[0] > n) || null; }
+function prevMilestone(n){ return [...MILESTONES].reverse().find(m => m[0] <= n) || null; }
+function markDay(){
+  const t = today(), s = { cur:0, best:0, last:null, ...(S.streak || {}) };
+  if (s.last === t) return false;
+  s.cur = s.last === addDays(-1) ? (s.cur || 0) + 1 : 1;
+  s.last = t; s.best = Math.max(s.best || 0, s.cur);
+  S.streak = s; S.days = [...(S.days || []).filter(d => d !== t), t].slice(-120);
+  const ms = MILESTONES.find(m => m[0] === s.cur);
+  if (ms){ toast(`Neuer Meilenstein: ${ms[0]} Tage ${ms[1]}`); if (session) session.milestone = ms; }
+  else toast(`🔥 ${s.cur} ${s.cur === 1 ? 'Tag' : 'Tage'} in Folge!`);
+  return true;
+}
 function greeting(){
   const now = new Date(), hr = now.getHours();
   const slot = hr >= 5 && hr < 11 ? 0 : hr >= 11 && hr < 17 ? 1 : 2;
@@ -655,6 +715,48 @@ function nameModal(){
     h('p',{class:'small muted'},'Damit dich die App begrüßen kann. Der Name wird mit deinem Konto gespeichert.'), f,
     h('div',{class:'row2'}, h('button',{class:'btn', onclick:closeModal},'Abbrechen'),
       h('button',{class:'btn primary', onclick:() => { S.name = f.value.trim(); saveMeta(); closeModal(); render(); }},'Speichern'))));
+}
+let showWelcome = true, hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+  else if (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000 && !session){ showWelcome = true; if (isReady()) render(); }
+});
+function streakCard(compact){
+  const n = streakNow(), nx = nextMilestone(n), pv = prevMilestone(n);
+  const from = pv ? pv[0] : 0, pct = nx ? Math.min(100, (n - from) / (nx[0] - from) * 100) : 100;
+  return h('div',{class:'streak' + (compact ? ' compact' : '')},
+    h('div',{class:'st-top'},
+      h('span',{class:'st-fire' + (n ? '' : ' off')}, '🔥'),
+      h('div',{class:'st-txt'}, h('div',{class:'st-num'}, n, h('span',null, n === 1 ? ' Tag in Folge' : ' Tage in Folge')),
+        h('div',{class:'st-sub'}, n === 0 ? `Lerne heute ${DAY_GOAL} Karten und starte deine Serie.` : countsToday() ? 'Heute zählt schon ✓' : `Heute noch ${Math.max(0, DAY_GOAL - (S.act && S.act.d === today() ? S.act.n : 0))} Karten für die Serie`))),
+    nx ? h('div',{class:'st-next'},
+      h('div',{class:'st-bar'}, h('i',{style:`width:${pct}%`})),
+      h('div',{class:'st-ms'}, `Nächster Meilenstein: ${nx[1]} ${nx[0]} Tage`, h('span',null, `noch ${nx[0] - n} ${nx[0] - n === 1 ? 'Tag' : 'Tage'}`)))
+      : h('div',{class:'st-ms'}, 'Alle Meilensteine erreicht! 🦄'));
+}
+function renderWelcome(){
+  const m = $('#main'); m.innerHTML = '';
+  const t = today(), sel = S.sel.filter(id => proj(id));
+  const dueSel = sel.reduce((n,id) => n + dueCount(id), 0), newSel = sel.reduce((n,id) => n + newLeft(proj(id)), 0);
+  const doneToday = S.act && S.act.d === t ? S.act.n : 0;
+  const lines = [];
+  if (!S.projects.length) lines.push(h('li',null,'Wähle zuerst deine Listen aus.'));
+  else if (!sel.length) lines.push(h('li',null,'Noch keine Liste für heute ausgewählt.'));
+  else if (!dueSel && !newSel) lines.push(h('li',null,'Alles erledigt für heute 🎉'));
+  else {
+    if (dueSel) lines.push(h('li',null, h('b',null, dueSel), ` ${dueSel === 1 ? 'Wort' : 'Wörter'} wiederholen`));
+    if (newSel) lines.push(h('li',null, h('b',null, newSel), ` neue ${newSel === 1 ? 'Wort' : 'Wörter'} lernen`));
+  }
+  if (doneToday) lines.push(h('li',{class:'done'}, h('b',null, doneToday), ' Karten heute schon geschafft'));
+  const go2 = () => { showWelcome = false; if (!S.projects.length){ view = 'words'; wf.detail = null; } else view = 'learn'; render(); window.scrollTo(0,0); };
+  m.append(h('div',{class:'welcome'},
+    h('div',{class:'w-top'},
+      h('p',{class:'hdate'}, new Date().toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' })),
+      h('h1',{class:'w-greet'}, `${greeting()}${S.name ? ',' : '!'}`, S.name ? h('span',null, `${S.name}!`) : null),
+      !S.name ? h('button',{class:'btn ghost namelink', onclick:nameModal}, 'Wie heißt du?') : null),
+    streakCard(false),
+    h('div',{class:'w-today'}, h('div',{class:'w-label'}, doneToday ? 'Das steht heute noch an:' : 'Das steht heute an:'), h('ul',null, lines)),
+    h('div',{class:'w-bottom'}, h('button',{class:'btn primary wide w-go', onclick:go2}, S.projects.length ? 'Los geht’s' : 'Listen auswählen'))));
 }
 function renderLearn(){
   const m = $('#main'); m.innerHTML = '';
@@ -709,7 +811,10 @@ function renderSession(){
   ));
   while (session.q.length && !card(session.q[0])) session.q.shift();
   if (!session.q.length){
-    m.append(h('div',{class:'finish'}, h('div',{class:'emoji'},'💪'), h('div',{class:'big'},'Geschafft!'),
+    if (!countsToday() && session.done > 0 && markDay()) saveMeta();
+    const ms = session.milestone;
+    m.append(h('div',{class:'finish'}, h('div',{class:'emoji'}, ms ? ms[1] : '💪'), h('div',{class:'big'}, ms ? `${ms[0]} Tage in Folge!` : 'Geschafft!'),
+      streakNow() && !ms ? h('div',{class:'fstreak'}, `🔥 ${streakNow()} ${streakNow() === 1 ? 'Tag' : 'Tage'} in Folge`) : null,
       h('p',{class:'muted'}, session.extra ? `${session.total} zusätzliche Karten erledigt. Stark!` : `Alle ${session.total} Karten für heute sind erledigt.`),
       moreBox(session.pids),
       h('button',{class:'btn ghost', onclick:() => go('learn')}, 'Zurück zur Übersicht')));
@@ -869,6 +974,7 @@ function answer(k){
   const id = session.q[0], c = { ...card(id) }, t = today();
   session.undo = { id, snap:{ ...card(id) }, q:[...session.q], done:session.done, log:JSON.parse(JSON.stringify(S.log)), act:S.act ? { ...S.act } : null };
   S.act = S.act && S.act.d === t ? { d:t, n:(S.act.n || 0) + 1 } : { d:t, n:1 };
+  if (S.act.n >= DAY_GOAL) markDay();
   let metaChanged = true;
   if (c.s === 0){ const lg = S.log[c.p]; if (lg && lg.d === t) lg.n++; else S.log[c.p] = { d:t, n:1 }; metaChanged = true; }
   if (k === 'no'){ c.s = 1; c.d = t; c.f = t; session.q.push(session.q.shift()); }
@@ -1011,6 +1117,18 @@ function renderStats(){
   const t = today(), cnt = [0,0,0,0,0,0,0,0];
   let due = 0; cards.forEach(c => { cnt[c.s]++; if (isDue(c,t)) due++; });
   m.append(h('h1',null,'Statistik'));
+  {
+    const best = Math.max(S.streak ? S.streak.best || 0 : 0, streakNow());
+    const cal = h('div',{class:'cal'});
+    const set = new Set(S.days || []);
+    for (let i = 27; i >= 0; i--){ const d = addDays(-i); cal.append(h('i',{class: set.has(d) ? 'on' : (d === today() ? 'now' : null), title:d.split('-').reverse().join('.')})); }
+    const badges = h('div',{class:'badges'}, MILESTONES.map(([n,e]) => h('div',{class:'bdg' + (best >= n ? ' got' : '')}, h('span',{class:'be'}, e), h('span',{class:'bn2'}, `${n} Tage`))));
+    m.append(h('h2',null,'Lernserie'), streakCard(true),
+      h('div',{class:'figs two'}, h('div',{class:'fig'}, h('b',null, streakNow()), h('span',null,'aktuelle Serie')), h('div',{class:'fig'}, h('b',null, best), h('span',null,'längste Serie'))),
+      h('div',{class:'calbox'}, h('div',{class:'callbl'},'Letzte 4 Wochen'), cal),
+      h('h2',null,'Meilensteine'), badges,
+      h('h2',null,'Wörter'));
+  }
   if (hasBoth){
     const seg = h('div',{class:'tog statseg'});
     [['all','Gesamt'],['vocab','Vokabeln'],['art','Artikel']].forEach(([v,l]) => seg.append(h('button',{'aria-pressed':String(statsType === v), onclick:() => { statsType = v; statsP = 'all'; renderStats(); }}, l)));
@@ -1307,7 +1425,7 @@ async function updateFromCatalog(p, ce, onProg){
   FB.onAuth(u => {
     session = null; closeModal();
     if (u){ U = u.uid; userEmail = u.email || ''; bootMsg = 'Lädt …'; listen(); }
-    else { U = null; stopListen(); S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null }; cardMap.clear(); }
+    else { U = null; stopListen(); S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'', name:'', act:null, streak:null, days:[] }; cardMap.clear(); }
     render();
   });
 })();

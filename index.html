@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Karteikasten</title>
+<meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121720" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Karteikasten">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --ink:#1C2532; --muted:#667183; --line:#DCE1E8;
+  --know:#2C5DA6; --know-ink:#FFFFFF; --know-soft:#E3ECF8;
+  --miss:#B0473C; --miss-ink:#FFFFFF; --miss-soft:#F7E6E3;
+  --wheat:#E0AE38; --track:#E8EBF0;
+  --ui:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --word:"Literata",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121720; --surface:#1B222D; --ink:#E7EBF1; --muted:#97A2B2; --line:#2C3542;
+    --know:#5C8FDB; --know-ink:#0E1420; --know-soft:#1F2C42;
+    --miss:#D9705F; --miss-ink:#1A0F0D; --miss-soft:#3A2522;
+    --wheat:#E6B94A; --track:#2A3240; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121720; --surface:#1B222D; --ink:#E7EBF1; --muted:#97A2B2; --line:#2C3542;
+  --know:#5C8FDB; --know-ink:#0E1420; --know-soft:#1F2C42;
+  --miss:#D9705F; --miss-ink:#1A0F0D; --miss-soft:#3A2522;
+  --wheat:#E6B94A; --track:#2A3240; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--know);outline-offset:2px}
+#main{max-width:560px;margin:0 auto;padding:20px 16px 110px}
+body.in-session #main{padding-bottom:24px}
+h1{font-size:1.6rem;font-weight:600;margin:4px 0 18px;letter-spacing:-.01em}
+h2{font-size:1.05rem;font-weight:600;margin:28px 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+
+/* Buttons */
+.btn{border:0;border-radius:12px;padding:14px 18px;font-weight:600;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);min-height:48px}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--know);color:var(--know-ink);box-shadow:none}
+.btn.danger{background:transparent;color:var(--miss);box-shadow:inset 0 0 0 1px var(--miss)}
+.btn.ghost{background:transparent;box-shadow:none;color:var(--know);padding:10px 4px;min-height:40px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:default}
+.iconbtn{border:0;background:transparent;width:44px;height:44px;border-radius:10px;display:inline-grid;place-items:center;color:var(--muted)}
+.iconbtn:hover{background:var(--track)}
+.iconbtn svg{width:22px;height:22px}
+
+/* Tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabs button{flex:1;max-width:186px;border:0;background:transparent;padding:10px 0 12px;color:var(--muted);font-size:.8rem;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-current="page"]{color:var(--know)}
+body.in-session .tabs{display:none}
+
+/* Learn home */
+.plist{display:flex;flex-direction:column;gap:10px}
+.prow{display:flex;align-items:center;gap:6px;background:var(--surface);border-radius:14px;padding:6px 6px 6px 4px;box-shadow:inset 0 0 0 1px var(--line)}
+.prow.on{box-shadow:inset 0 0 0 2px var(--know)}
+.prow label{flex:1;display:flex;align-items:center;gap:12px;padding:10px;cursor:pointer;min-width:0}
+.prow input{width:22px;height:22px;accent-color:var(--know);flex:none}
+.prow .pname{font-weight:600;display:block}
+.prow .pmeta{font-size:.88rem;color:var(--muted)}
+.start{margin-top:20px}
+.alldone{margin-top:20px;padding:18px;border-radius:14px;background:var(--know-soft);text-align:center}
+
+/* Session */
+.stop{display:flex;align-items:center;gap:8px;margin:0 0 14px}
+.stop .bar{flex:1;height:6px;border-radius:3px;background:var(--track);overflow:hidden}
+.stop .bar i{display:block;height:100%;background:var(--wheat);transition:width .3s}
+.stop .count{font-size:.85rem;color:var(--muted);min-width:64px;text-align:right}
+.card{background:var(--surface);border-radius:20px;box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(20,30,50,.35);padding:16px 20px 14px;min-height:340px;display:flex;flex-direction:column;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.chead{display:flex;align-items:center;gap:10px}
+.steps{display:flex;gap:4px}
+.steps i{width:18px;height:6px;border-radius:3px;background:var(--track)}
+.steps i.on{background:var(--wheat)}
+.chead .slabel{font-size:.8rem;color:var(--muted)}
+.chead .proj{font-size:.8rem;color:var(--muted);margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chead .iconbtn{margin-left:auto;margin-right:-10px}
+.chead .proj + .iconbtn{margin-left:0}
+.cbody{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:22px 0 10px}
+.front{font-family:var(--word);font-size:clamp(1.6rem,6vw,2.1rem);font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.back{font-family:var(--word);font-size:clamp(1.25rem,5vw,1.6rem);line-height:1.35;margin-top:18px;padding-top:18px;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.note{margin-top:14px;font-size:.95rem;color:var(--ink);background:var(--bg);border-radius:10px;padding:10px 12px;text-align:left;white-space:pre-wrap}
+.cimg{margin-top:14px;max-width:100%;max-height:220px;border-radius:10px;align-self:center;object-fit:contain}
+.tap{margin-top:14px;font-size:.85rem;color:var(--muted)}
+.src{font-size:.72rem;color:var(--muted);text-align:center;padding-top:8px}
+.answers{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.arow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.abtn{border:0;border-radius:14px;padding:14px 10px;font-weight:600;font-size:1.02rem;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.abtn small{font-weight:400;font-size:.78rem;opacity:.85}
+.abtn.no{background:var(--miss);color:var(--miss-ink)}
+.abtn.yes{background:var(--know);color:var(--know-ink)}
+.jrow{display:flex;gap:10px;justify-content:flex-end}
+.jbtn{border:0;border-radius:10px;padding:8px 14px;background:var(--know-soft);color:var(--know);font-weight:500;font-size:.88rem;min-height:40px}
+.jlabel{font-size:.85rem;color:var(--muted);align-self:center;margin-right:auto;white-space:nowrap}
+.reveal{border:0;border-radius:14px;min-height:64px;width:100%;background:var(--ink);color:var(--surface);font-weight:600;font-size:1.02rem}
+.finish{text-align:center;padding:60px 10px}
+.finish .big{font-family:var(--word);font-size:1.8rem;font-weight:600;margin-bottom:8px}
+
+/* Words */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.field{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);min-height:48px}
+textarea.field{min-height:84px;resize:vertical}
+.toolbar .field{flex:1 1 140px;width:auto}
+.toolbar .search{flex-basis:100%}
+.wlist{background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.wrow{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;text-align:left;padding:12px 14px;border-top:1px solid var(--line)}
+.wrow:first-child{border-top:0}
+.wrow .wt{flex:1;min-width:0}
+.wrow .wa{display:block;font-weight:500;overflow-wrap:anywhere}
+.wrow .wb{display:block;font-size:.88rem;color:var(--muted);overflow-wrap:anywhere}
+.badge{flex:none;min-width:34px;text-align:center;font-size:.78rem;font-weight:600;padding:4px 8px;border-radius:999px;background:var(--track);color:var(--muted)}
+.badge.s1,.badge.s2{background:var(--miss-soft);color:var(--miss)}
+.badge.s3,.badge.s4{background:var(--know-soft);color:var(--know)}
+.badge.s5,.badge.s6{background:var(--wheat);color:#2A2108}
+.whead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.whead h1{margin-bottom:12px}
+.more{display:block;margin:12px auto 0}
+
+/* Stats */
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fig{background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 1px var(--line);padding:14px 12px}
+.fig b{display:block;font-size:1.6rem;font-weight:600;line-height:1.1}
+.fig span{font-size:.82rem;color:var(--muted)}
+.bars{background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 1px var(--line);padding:8px 14px}
+.brow{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:10px;padding:8px 0}
+.brow .bl{font-size:.88rem}
+.brow .bl small{display:block;color:var(--muted);font-size:.75rem}
+.brow .bt{height:12px;border-radius:6px;background:var(--track);overflow:hidden}
+.brow .bt i{display:block;height:100%;border-radius:6px;background:var(--know)}
+.brow.new .bt i{background:var(--muted)}
+.brow .bn{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.backup{display:flex;flex-wrap:wrap;gap:10px}
+.backup .btn{flex:1 1 200px}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.modal[hidden]{display:none}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:calc(100% - env(safe-area-inset-top,0px) - 12px);overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+@media (min-width:600px){.modal{align-items:center}.sheet{border-radius:20px;max-height:90%}}
+.sheet h2{margin:0 0 14px;font-size:1.2rem}
+.sheet label.lb{display:block;font-size:.85rem;color:var(--muted);margin:12px 0 5px}
+.sheet .row2{display:flex;gap:10px;margin-top:20px}
+.sheet .row2 .btn{flex:1}
+.sheet .del{margin-top:24px;width:100%}
+.imgbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.imgbox img{max-width:120px;max-height:90px;border-radius:8px}
+.tog{display:flex;gap:6px}
+.tog button{flex:1;border:0;border-radius:10px;padding:10px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-weight:500;min-height:44px}
+.tog button[aria-pressed="true"]{background:var(--know-soft);box-shadow:inset 0 0 0 2px var(--know);color:var(--know)}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90%}
+#toast.show{opacity:1}
+.warn{background:var(--miss-soft);color:var(--miss);border-radius:12px;padding:10px 14px;font-size:.9rem;margin-bottom:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+body.no-tabs .tabs{display:none}
+body.no-tabs #main{padding-bottom:24px}
+.login{max-width:400px;margin:8vh auto 0}
+.login .brand{font-family:var(--word);font-size:2rem;font-weight:600;margin:0 0 6px}
+.login .btn.primary{margin-top:20px}
+.err{color:var(--miss);font-size:.9rem;min-height:1.3em;margin:10px 0 0}
+.setup .btn{margin-top:10px}
+.sync{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sync i{width:9px;height:9px;border-radius:50%;background:var(--know);flex:none}
+.sync.pending i{background:var(--wheat)}
+.sync.off i{background:var(--muted)}
+</style>
+</head>
+<body>
+<main id="main"><p class="muted">Lädt …</p></main>
+<nav class="tabs" id="tabs">
+  <button data-tab="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="13" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v11"/></svg>Lernen</button>
+  <button data-tab="words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Wörter</button>
+  <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Statistik</button>
+</nav>
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<input type="file" id="imgInput" accept="image/*" hidden>
+<input type="file" id="jsonInput" accept=".json,application/json" hidden>
+<div id="toast" role="status"></div>
+
+<script>
+/* =====================================================================
+   FIREBASE-KONFIGURATION
+   Hier die Werte aus der Firebase-Konsole einfügen
+   (Projekteinstellungen → Allgemein → Meine Apps → SDK-Konfiguration).
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD4zrmStqW0dLaUcCIKS1ZvssspCSGvDx8",
+  authDomain: "ira-vokabeln.firebaseapp.com",
+  projectId: "ira-vokabeln",
+  storageBucket: "ira-vokabeln.firebasestorage.app",
+  messagingSenderId: "392979559342",
+  appId: "1:392979559342:web:ccbbc081a04b2f1fdf4e3f"
+};
+/* ===================================================================== */
+
+const DATA = [["das Bewusstsein","свідомість; усвідомлення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Andeutung","натяк; непряме зазначення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Einsicht","розуміння; усвідомлення; проникливість","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Miene","вираз обличчя; міна","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Pointe","дотепна кінцівка; кульмінаційний момент жарту","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Anspielung","натяк; алюзія","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Aufbruch","від’їзд; вирушення; початок нового етапу","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Knast (розмовне)","в’язниця; тюрма","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Schiedsrichter","суддя (у спорті); арбітр","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Schwamm","губка; гриб (наприклад, їстівний)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Touch","відтінок; нотка; особливий стиль або шарм","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Zahn der Zeit","невблаганний плин часу; руйнівний вплив часу","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Ausstattung","обладнання; оснащення; оформлення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Durchsage","оголошення через гучномовець; повідомлення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Umgangsform","форма спілкування; манера поведінки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Verzögerung","затримка; уповільнення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Betätigung","діяльність; заняття; приведення в дію","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Einsatz","застосування; використання; залучення; відданість","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Facette","грань; аспект; сторона","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Hotelfachleute (Pl.)","фахівці готельної справи","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Hotelkaufleute (Pl.)","спеціалісти з готельного менеджменту та адміністрування","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Kreuzfahrt","морський круїз","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Page","готельний посильний; паж","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Attest","медична довідка","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Beistellbett","додаткове; приставне ліжко","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Büfett","буфет; шведський стіл","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Rücktritt","відставка; відмова від посади; вихід із договору","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Suite","люкс; номер підвищеної комфортності","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Kompromiss","компроміс","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Schlagwort","ключове слово; гасло; крилатий вислів","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Boden","земля; ґрунт; підлога; дно","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Erzeuger","виробник; виробник сільськогосподарської продукції","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Kurpark","курортний парк","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Panorama, die Panoramen","панорама","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Schuhwerk (Sg.)","взуття","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Trio","тріо","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Überrest","залишок; рештки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Andenken","пам’ять; сувенір (залежно від контексту)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Eule","сова","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Kalkül","розрахунок; міркування; стратегічний розрахунок","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Souvenir","сувенір","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["das Synonym","синонім","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Zuneigung","прихильність; симпатія; ніжність","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Impuls","імпульс; поштовх; спонукання","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["die Internetplattform","інтернет-платформа","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["der Segeltörn","морська прогулянка під вітрилом; вітрильний похід","Lehrbuch · Lektion 1–2 · Vorlage PDF · Substantive"],["entschlüsseln","розшифровувати; розгадувати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entsorgen","утилізувати; позбуватися непотрібних речей","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entgiften","знешкоджувати отруту; очищати від токсинів","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entkernen","видаляти серцевину або кісточки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entkleiden","роздягати; позбавляти чогось (переносно)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entmutigen","знеохочувати; позбавляти сміливості","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entseften","віджимати сік; позбавляти соку","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entziehen","забирати; позбавляти; вилучати; ухилятися (з sich)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["entzaubern","розчаровувати; позбавляти чарівності","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["gönnen","дозволяти собі; балувати себе; бажати комусь добра","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["hacken","рубати; подрібнювати; зламувати комп’ютерні системи","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["komponieren","компонувати; складати музику","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["locken","приваблювати; заманювати; вабити","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["missachten","нехтувати; ігнорувати; не поважати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["missfallen","не подобатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["missglücken","не вдатися; зазнати невдачі","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["missgönnen","заздрити; не бажати комусь добра","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["misslingen","не вдатися; зазнати невдачі","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["missraten","вийти невдалим; не вдатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["mithalten","не відставати; триматися на рівні з кимось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["platzen","лопнути; тріснути; розірватися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["sich andeuten","намічатися; вимальовуватися; ставати помітним","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["sich legen (etwas legt sich)","стихати; вщухати; минати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerreden","зіпсувати надмірними розмовами; заговорити до смерті","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["verzweifeln","впадати у відчай; зневірюватися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerdrücken","розчавити; зім’яти","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerfallen","розпадатися; руйнуватися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerfließen","розтікатися; розпливатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zergehen","танути; розчинятися; розпадатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerhacken","порубати на шматки; подрібнити","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerkochen","переварити; розварити до кашоподібного стану","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerlaufen","розтікатися; розпливатися; розтанути","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerlegen","розбирати на частини; демонтувати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerplatzen","лопнути; розірватися з тріском","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerreißen","розірвати; розривати на шматки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerschneiden","розрізати; порізати на шматки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerspringen","розбитися; розлетітися на друзки","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["zerstreuen","розсіювати; розпорошувати; відволікати увагу","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["schwanken","коливатися; хитатися; вагатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["beinhalten","містити; включати в себе","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["ausklingen (klang aus, ist ausgeklungen)","поступово завершуватися; затихати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["jemandem etwas nahebringen","пояснити комусь щось; допомогти краще зрозуміти","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["verwöhnen","балувати; розпещувати; пестити","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["erstehen (+Akk.; erstand, hat erstanden)","придбати; купити (часто вигідно)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["konservieren","консервувати; зберігати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["nachvollziehen","розуміти; простежувати логіку; співпереживати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["jemandem etwas untersagen","забороняти комусь щось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["ausbauen","розширювати; розбудовувати; вдосконалювати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Verben"],["sich eine Sache bewusst machen","усвідомити щось; дати собі звіт у чомусь","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["etwas einen modernen/neuen Anstrich geben","надати чомусь сучасного/нового вигляду","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["von der Pike auf","від самих азів; з найнижчого рівня","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["einen neuen Weg einschlagen (schlug ein, hat eingeschlagen)","обрати новий шлях; стати на новий шлях","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["hinter den Kulissen","за лаштунками; за кулісами","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Aufmerksamkeit erfordern","вимагати уваги","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["jemandem auf die Schliche kommen","викрити когось; розкрити хитрість або обман","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["eine Sache an sich","річ сама по собі; щось окремо взяте","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["jemandem Beachtung schenken","приділяти комусь увагу","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["etwas Beachtung schenken","приділяти чомусь увагу","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["etwas legt sich","щось стихає; вщухає; минає","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["sich einer Sache entziehen","ухилятися від чогось; уникати чогось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["verspannt sein","бути напруженим (про м’язи); мати м’язове напруження","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["der Ansicht sein","бути тієї думки; вважати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["zur Auswahl stehen (stand, hat/ist gestanden)","бути доступним для вибору; бути серед варіантів","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Freude bereiten","приносити радість; тішити","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["etwas in Kauf nehmen (nahm, hat genommen)","миритися з чимось; свідомо приймати небажане","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Schwierigkeiten bereiten","створювати труднощі; завдавати клопоту","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["zur Sprache kommen (kam, ist gekommen)","порушуватися; згадуватися; обговорюватися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["das Verständnis vertiefen","поглиблювати розуміння","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Vorbereitungen treffen (traf, hat getroffen)","здійснювати підготовку; вживати підготовчих заходів","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["im Vordergrund stehen","бути на першому плані; перебувати в центрі уваги","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["es gilt, etwas zu tun (galt, hat gegolten)","потрібно; необхідно щось зробити","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["auf eigene Faust","самостійно; на власний розсуд; без сторонньої допомоги","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["eine Auswahl treffen","зробити вибір; відібрати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["eine Entscheidung treffen","ухвалити рішення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["in Erfahrung bringen (brachte, hat gebracht)","дізнатися; з’ясувати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["in Erfüllung gehen (ging, ist gegangen)","здійснюватися; збуватися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["sich etwas (+Akk.) zur Gewohnheit machen","зробити щось своєю звичкою","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["eine Initiative ergreifen (ergriff, hat ergriffen)","проявити ініціативу; виступити з ініціативою","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["über Kenntnisse verfügen","володіти знаннями","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Kritik üben an (+Dat.)","критикувати; висловлювати критику щодо чогось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["auf Kritik stoßen (stieß, ist gestoßen)","натрапити на критику; викликати критику","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["eine Lösung finden (fand, hat gefunden)","знайти рішення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["zur Sprache bringen","порушити питання; завести розмову про щось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["Verantwortung übernehmen","брати на себе відповідальність","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["auf die Probe stellen","випробовувати; піддавати випробуванню","Lehrbuch · Lektion 1–2 · Vorlage PDF · Redewendungen"],["absurd","абсурдний; безглуздий","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["episch","епічний; грандіозний; надзвичайно вражаючий (розмовне)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["langatmig","затягнутий; багатослівний; нудний","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["umwerfend","приголомшливий; неймовірний; захопливий","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["angehend","майбутній; початківець (про фахівця)","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["reizvoll","привабливий; чарівний; спокусливий","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["abgelegen","віддалений; відокремлений","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["fachkundig","компетентний; обізнаний; кваліфікований","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["pauschal","загальний; узагальнений; без деталізації","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["ausgleichend","врівноважений; той, що сприяє гармонії","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["hautnah","безпосередній; дуже близький; на власному досвіді","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["naturbelassen","природний; незайманий; такий, що зберіг природний стан","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["enorm","величезний; надзвичайний; колосальний","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["liebenswert","милий; чарівний; гідний любові","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["nachhaltig","сталий; довготривалий; екологічно відповідальний","Lehrbuch · Lektion 1–2 · Vorlage PDF · Adjektive / Adverbien"],["geistige Umnachtung","помутніння розуму; затьмарення свідомості; душевне потьмарення","Lehrbuch · Lektion 1–2 · Vorlage PDF · Besondere Ausdrücke"],["Das war eine Anspielung auf seinen Fehler.","Це був натяк на його помилку.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Wir brechen morgen früh auf.","Ми вирушаємо завтра рано-вранці.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Der Sturm legt sich langsam.","Буря поступово вщухає.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Der Zahn der Zeit hat das alte Gebäude beschädigt.","Плин часу пошкодив стару будівлю.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Lass dich nicht entmutigen!","Не падай духом!","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Die ersten Probleme deuten sich bereits an.","Перші проблеми вже починають вимальовуватися.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Sie kann mit den anderen mithalten.","Вона може не відставати від інших.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Der Film war ziemlich langatmig.","Фільм був досить затягнутим.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Seine Leistung war umwerfend.","Його виступ був приголомшливим.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Ich schenke diesem Thema besondere Beachtung.","Я приділяю цій темі особливу увагу.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Die Polizei ist ihm auf die Schliche gekommen.","Поліція викрила його.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Das ist eine Sache an sich.","Це окреме питання / Це річ сама по собі.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Ich gönne dir deinen Erfolg.","Я радий за тебе й бажаю тобі успіху.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Ich missgönne dir deinen Erfolg nicht.","Я не заздрю твоєму успіху.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Mach dir bewusst, wie wichtig das ist.","Усвідом, наскільки це важливо.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Der Versuch ist misslungen.","Спроба не вдалася.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Das Essen ist missraten.","Страва вийшла невдалою.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Das Glas ist zersprungen.","Склянка розбилася на друзки.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Er hat das Papier zerrissen.","Він розірвав папір.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Sie verzweifelt an dieser Aufgabe.","Вона впадає у відчай через це завдання.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Er hat das Handwerk von der Pike auf gelernt.","Він опанував ремесло від самих азів.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Wir wollen dem Hotel einen modernen Anstrich geben.","Ми хочемо надати готелю сучасного вигляду.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Sie hat die Stadt auf eigene Faust erkundet.","Вона самостійно дослідила місто.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Für diesen Job muss man lange Arbeitszeiten in Kauf nehmen.","Заради цієї роботи доводиться миритися з довгим робочим днем.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["Die Touristen konnten die Natur hautnah erleben.","Туристи могли безпосередньо відчути природу.","Lehrbuch · Lektion 1–2 · Vorlage PDF · Beispielsätze"],["misslingen","спроба або дія не вдається","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["missraten","щось виходить невдалим","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["missglücken","щось не вдається","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["missgönnen","заздрити; не бажати комусь добра","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["gönnen","бажати добра; дозволяти собі щось","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["zerbrechen","розбитися; зламатися","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["zerreißen","розірвати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["zerschneiden","розрізати","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["zerlegen","розібрати на частини","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["zerstreuen","розсіяти; відволікти","Lehrbuch · Lektion 1–2 · Vorlage PDF · Unterscheidungen"],["der Bauer, -n","селянин; фермер","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Eiszeit, -en","льодовиковий період","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Fähigkeit, -en","здібність; здатність","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Fertigkeit, -en","навичка; уміння","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Geschicklichkeit (Sg.)","вправність; спритність","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["der Jäger, -","мисливець","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["der Krieger, -","воїн","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["das Mittelalter (Sg.)","Середньовіччя","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["der Ritter, -","лицар","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["der Sammler, -","збирач; колекціонер","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["der Siedler, -","поселенець","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Steinzeit (Sg.)","кам'яна доба","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["die Vorsicht (Sg.)","обережність","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Substantive"],["existenziell","екзистенційний; життєво важливий","Lehrbuch · Lektion 3 · Einstiegsseite · S. 37 · Adjektive"],["der Homo sapiens (Sg.)","людина розумна (Homo sapiens)","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["die Kapazität, -en","здатність; потенціал; місткість","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["die Merkfähigkeit (Sg.)","здатність запам'ятовувати","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["die Spezies, -","вид (біологічний)","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["die Verfügbarkeit (Sg.)","доступність; наявність","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["der Vorfahre, -n","предок","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["das Wesen, -","істота; сутність","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Substantive"],["abhängen von, hing ab, hat abgehangen","залежати від","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["beeindrucken","вражати; справляти враження","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["einstellen (hier: beenden)","припиняти; зупиняти (тут)","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["entgegenstehen, stand entgegen, hat/ist entgegengestanden","суперечити; стояти на заваді","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["schwinden, schwand, ist geschwunden","зменшуватися; зникати","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["vererben","передавати у спадок; успадковувати","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Verben"],["abwärtsgehen, es ging abwärts, es ist abwärtsgegangen","йти на спад; погіршуватися","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Redewendungen"],["imstande sein","бути спроможним; бути здатним","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Redewendungen"],["anschaulich","наочний; зрозумілий; образний","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["ausgeprägt","виражений; яскраво виражений","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["eigenständig","самостійний; незалежний","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["erforderlich","необхідний; потрібний","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["numerisch","числовий; цифровий","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["schlau","розумний; кмітливий","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["allmählich","поступово","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["lediglich","лише; тільки","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["hingegen","натомість; проте","Lehrbuch · Lektion 3 · Lesen · S. 38–39 · Adjektive / Adverbien"],["die Lerneinheit, -en","навчальний блок; навчальна одиниця","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["der Reflex, -e","рефлекс","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["der Reiz, -e","подразник; стимул","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["die Rhetorik (Sg.)","риторика","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["das Symbol, -e","символ","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["der Vorsprung (Sg.)","перевага; випередження","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Substantive"],["jemandem etwas abverlangen","вимагати від когось чогось","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["sich (Dat.) etwas einprägen","закарбувати щось у пам'яті; запам'ятати","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["fördern","сприяти; підтримувати; розвивати","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["stabilisieren","стабілізувати; зміцнювати","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["stimulieren","стимулювати","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["sich sträuben","опиратися; чинити спротив","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["versäumen","пропускати; не встигнути; згаяти","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["zuordnen","відносити; співвідносити; призначати","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Verben"],["etwas sträubt sich bei jemandem","у когось усе всередині опирається чомусь","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Redewendungen"],["jemanden vertraut machen mit","ознайомлювати когось із чимось","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Redewendungen"],["großflächig","масштабний; на великій площі","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Adjektive / Adverbien"],["neulich","нещодавно; днями","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Adjektive / Adverbien"],["das ist mir nicht ganz unbekannt","це мені не зовсім незнайоме","Lehrbuch · Lektion 3 · Schreiben · S. 40–41 · Вислови"],["Alzheimer (Sg.)","хвороба Альцгеймера","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Substantive"],["das Gehirn, -e","головний мозок","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Substantive"],["schlafen über (+ Akk.), schlief, hat geschlafen","переспати з думкою про щось; відкласти рішення до наступного дня","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Verben"],["umsetzen","втілювати; реалізовувати","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Verben"],["unterschätzen","недооцінювати","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Verben"],["angespannt","напружений","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Adjektive"],["ein guter Vorsatz","добрий намір; новорічна обіцянка","Lehrbuch · Lektion 3 · Hören · S. 42–43 · Redewendungen"],["der Betriebsrat, -¨e","рада трудового колективу; виробнича рада","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Substantive"],["die Eignung (Sg.)","придатність; відповідність вимогам","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Substantive"],["die Empathie (Sg.)","емпатія; співпереживання","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Substantive"],["sich auseinandersetzen mit","розбиратися з чимось; детально обговорювати","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["sich erweisen als, erwies sich, hat sich erwiesen","виявлятися кимось / чимось","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["festhalten, hielt fest, hat festgehalten","тримати міцно; фіксувати; записувати","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["etwas gelten lassen, ließ gelten, hat gelten lassen","визнавати щось обґрунтованим; приймати аргумент","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["optimieren","оптимізувати; удосконалювати","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["Gewicht legen auf (+ Akk.)","надавати великого значення чомусь","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["einen Standpunkt vertreten, vertrat, hat vertreten","відстоювати певну позицію","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["von Vorteil sein","бути перевагою; бути вигідним","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["etwas im Visier haben","тримати щось у полі зору; мати щось за мету","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Verben / Wendungen"],["adäquat","адекватний; відповідний","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Adjektive / Adverbien"],["aufwendig","витратний; трудомісткий","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Adjektive / Adverbien"],["intellektuell","інтелектуальний","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Adjektive / Adverbien"],["renommiert","відомий; авторитетний","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Adjektive / Adverbien"],["standardisiert","стандартизований","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Adjektive / Adverbien"],["alles in allem","загалом; у цілому","Lehrbuch · Lektion 3 · Sprechen · S. 44–45 · Redewendungen"],["die Antike (Sg.)","античність; антична епоха","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["die Belehrung, -en","повчання; настанова","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["die Verfremdung, -en","очуження; ефект відсторонення","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["die Fabel, -n","байка","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["der Fuchs, -¨e","лисиця","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["die Moral (Sg.)","мораль","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Substantive"],["jemandem schmeicheln","лестити комусь","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Verben / Wendungen"],["jemandem überlegen sein","переважати когось; бути в чомусь кращим за когось","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Verben / Wendungen"],["jemandem etwas zuschreiben, schrieb zu, hat zugeschrieben","приписувати комусь щось","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Verben / Wendungen"],["jemandem einen Spiegel vorhalten, hielt vor, hat vorgehalten","показувати комусь його недоліки; ставити перед кимось дзеркало","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Verben / Wendungen"],["eitel","марнославний; пихатий","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["einfältig","простодушний; наївний","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["empört","обурений","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["gemein","підлий; злий; спільний","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["gutmütig","добродушний","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["listig","хитрий; лукавий","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["naiv","наївний","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["töricht","нерозумний; дурний","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["weise","мудрий","Lehrbuch · Lektion 3 · Wortschatz · S. 46 · Adjektive"],["das Requisit, -en","реквізит (театральний)","Lehrbuch · Lektion 3 · Sehen und Hören · S. 47 · Substantive"],["unmittelbar","безпосередній; негайний","Lehrbuch · Lektion 3 · Sehen und Hören · S. 47 · Adjektive / Adverbien"],["die Balance, -n","рівновага; баланс","Lehrbuch · Lektion 4 · Einstiegsseite · S. 49"],["die Berufung, -en","покликання; призначення","Lehrbuch · Lektion 4 · Einstiegsseite · S. 49"],["hineinschnuppern in (+ Akk.)","ознайомитися побіжно; спробувати себе в чомусь","Lehrbuch · Lektion 4 · Einstiegsseite · S. 49"],["schuften","важко працювати; гарувати","Lehrbuch · Lektion 4 · Einstiegsseite · S. 49"],["die Ambition, -en","амбіція; прагнення","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["das Labyrinth, -e","лабіринт","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["die Renaissance, -n","Відродження; ренесанс","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["die Spitzenkraft, -¨e","провідний фахівець","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["der Universalist, -en","універсал; фахівець широкого профілю","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["der Wert, -e","цінність; вартість","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["ausrichten nach","орієнтувати на; узгоджувати з","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["ausloten","досліджувати можливості; з'ясовувати межі","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["streben (nach)","прагнути (чогось)","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["sich widmen (+ Dat.)","присвячувати себе чомусь","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["brachliegen, lag, hat/ist gelegen","лежати без використання; простоювати","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["etwas macht etwas/jemanden aus","щось становить сутність чогось/когось","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["das Risiko streuen","розподіляти ризик","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["mit sich im Reinen sein","бути в злагоді із собою","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["jemandem über die Schulter schauen","спостерігати за чиєюсь роботою","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["erfüllend","той, що приносить задоволення","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["rational","раціональний","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["simultan","одночасний","Lehrbuch · Lektion 4 · Lesen 1 · S. 50–51"],["das Betriebsklima (Sg.)","атмосфера в колективі","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["der Einwand, -¨e","заперечення","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["die Honorierung, -en","винагорода; оплата","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["das Mitspracherecht, -e","право голосу; право брати участь у вирішенні","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["der Spaßfaktor, -en","чинник задоволення","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["das Start-up-Unternehmen, -","стартап; новостворена компанія","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["der Umgangston, -¨e","тон спілкування","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["die Vertragssituation, -en","договірна ситуація; умови контракту","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["düster","похмурий; темний","Lehrbuch · Lektion 4 · Sprechen · S. 52"],["die Abgabe, -n","збір; внесок; податок","Lehrbuch · Lektion 4 · Hören · S. 53"],["die Anzeige, -n","оголошення; заява","Lehrbuch · Lektion 4 · Hören · S. 53"],["der Berufseinsteiger, -","початківець у професії","Lehrbuch · Lektion 4 · Hören · S. 53"],["das Gewerbe, -","підприємництво; ремесло","Lehrbuch · Lektion 4 · Hören · S. 53"],["die Lohnsteuer, -n","податок на заробітну плату","Lehrbuch · Lektion 4 · Hören · S. 53"],["die Migration, -en","міграція","Lehrbuch · Lektion 4 · Hören · S. 53"],["der Minijobber, -","працівник із мінімальною зайнятістю","Lehrbuch · Lektion 4 · Hören · S. 53"],["die Sozialabgabe, -n","соціальний внесок","Lehrbuch · Lektion 4 · Hören · S. 53"],["zutreffen, traf zu, hat zugetroffen","бути правильним; відповідати дійсності","Lehrbuch · Lektion 4 · Hören · S. 53"],["geringfügig","незначний; мінімальний","Lehrbuch · Lektion 4 · Hören · S. 53"],["die Abrechnung, -en","розрахунок; платіжна відомість","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Abzug, -¨e","відрахування; утримання","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Aushilfe, -n","тимчасовий працівник; підробіток","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["das Bruttoeinkommen, -","валовий дохід","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["das Entgelt (Sg.)","оплата; винагорода","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Fachkraft, -¨e","кваліфікований фахівець","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Freiberufler, -","представник вільної професії","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Gehaltsabrechnung, -en","розрахунковий листок зарплати","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Gehaltserhöhung, -en","підвищення зарплати","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Gehaltszettel, -","листок нарахування зарплати","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["das Honorar, -e","гонорар","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Kirchensteuer, -n","церковний податок","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Nettolohn, -¨e","чиста зарплата; зарплата після відрахувань","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Pflegeversicherung, -en","страхування на випадок потреби в догляді","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Posten, -","стаття витрат; посада","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["das Repertoire, -s","репертуар","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Solidaritätszuschlag, -¨e","солідарний збір","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Stundenlohn, -¨e","погодинна оплата","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["der Zuschlag, -¨e","надбавка; доплата","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["jemanden binden an, band, hat gebunden","прив'язувати когось до чогось","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["einprägen","закарбовувати в пам'яті","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["brutto","брутто; до відрахувань","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["gesetzlich","законний; передбачений законом","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["netto","нетто; після відрахувань","Lehrbuch · Lektion 4 · Wortschatz · S. 54–55"],["die Attacke, -n","напад; атака","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["der Choleriker, -","холерик","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["die Eventualität, -en","можливість; непередбачена обставина","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["das Nervenwrack, -s","нервово виснажена людина","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["der Pedant, -en","педант","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["die Selbstvermarktung (Sg.)","самопросування; особистий маркетинг","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["der Trainee, -s","стажер","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["der Versager, -","невдаха","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["die Zeitbombe, -n","бомба уповільненої дії","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["jemandem etwas aufdrücken","нав'язувати комусь щось","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["(auf-/ab-)runden","округлювати (вгору/вниз)","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["blenden","засліплювати; вводити в оману","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["brüllen","ревіти; кричати","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["hasten","поспішати; квапитися","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["jetten","літати реактивним літаком; багато подорожувати","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["lahmlegen","паралізувати; виводити з ладу","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["übertrumpfen","перевершити; переплюнути","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["wackeln","хитатися; коливатися","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["zelebrieren","урочисто відзначати; святкувати","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["zittern","тремтіти","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["Mist bauen","наробити дурниць; напартачити","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es weit bringen, brachte, hat gebracht","далеко просунутися; досягти успіху","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es geht um","йдеться про","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es handelt sich um","мова йде про; це є","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es leicht/schwer/... haben","мати легкі/важкі обставини","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["jemandem auf die Schulter klopfen","поплескати когось по плечу","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es kommt darauf an","це залежить від обставин","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es ernst/gut/... meinen","мати серйозні/добрі наміри","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["ohne Punkt und Komma reden","говорити без упину","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["den Laden schmeißen, schmiss, hat geschmissen","керувати всією справою","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["hart im Nehmen sein","бути витривалим; добре переносити труднощі","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["es zu tun haben mit","мати справу з","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["hoch hinaus wollen","прагнути високих досягнень","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["sich in die Länge ziehen, zog, hat gezogen","затягуватися; тривати довше","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["lässig","невимушений; недбалий","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["schamlos","безсоромний","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["stilistisch","стилістичний","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["unberechenbar","непередбачуваний","Lehrbuch · Lektion 4 · Lesen 2 · S. 56–57"],["das Exposé, -s","експозе; короткий виклад задуму","Lehrbuch · Lektion 4 · Schreiben · S. 58"],["hochtalentiert","надзвичайно талановитий","Lehrbuch · Lektion 4 · Schreiben · S. 58"],["steinreich","казково багатий","Lehrbuch · Lektion 4 · Schreiben · S. 58"],["top","найкращий; відмінний","Lehrbuch · Lektion 4 · Schreiben · S. 58"],["der Haufen, -","купа; натовп","Lehrbuch · Lektion 4 · Sehen und Hören · S. 59"],["die Hierarchie, -n","ієрархія","Lehrbuch · Lektion 4 · Sehen und Hören · S. 59"],["die Unternehmenskultur, -en","корпоративна культура","Lehrbuch · Lektion 4 · Sehen und Hören · S. 59"],["die Interpretation, -en","інтерпретація; тлумачення","Lehrbuch · Lektion 5 · Einstiegsseite · S. 61"],["die Wirkung, -en","вплив; ефект","Lehrbuch · Lektion 5 · Einstiegsseite · S. 61"],["das Atelier, -s","ательє; художня майстерня","Lehrbuch · Lektion 5 · Sehen und Hören 1 · S. 62"],["die Blockade, -n","блокада; перешкода","Lehrbuch · Lektion 5 · Sehen und Hören 1 · S. 62"],["das Porträt, -s","портрет","Lehrbuch · Lektion 5 · Sehen und Hören 1 · S. 62"],["die Vitalität (Sg.)","життєва енергія; життєздатність","Lehrbuch · Lektion 5 · Sehen und Hören 1 · S. 62"],["der Bildhauer, -","скульптор","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["die Leinwand, -¨e","полотно; екран","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["der Meißel, -","різець; зубило","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["der Rahmen, -","рама; рамки","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["die Skulptur, -en","скульптура","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["bearbeiten","обробляти; опрацьовувати","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["bemalen","розмальовувати","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["bespannen","натягувати матеріал на щось","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["etwas spannen (auf)","натягувати (на)","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["vereinfachen","спрощувати","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["vergolden","позолочувати","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["sich verhören","недочути; неправильно почути","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["sich verlaufen, verlief, hat verlaufen","заблукати","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["versäumen","пропустити; згаяти","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["verschönern","прикрашати; робити красивішим","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["sich verwählen","набрати неправильний номер","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["sich/jemanden verwandeln","перетворюватися; перетворювати когось","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["unterirdisch","підземний; жахливий","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["verwirrt","розгублений; спантеличений","Lehrbuch · Lektion 5 · Wortschatz · S. 63"],["die Avantgarde, -n","авангард","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["die Installation, -en","інсталяція; встановлення","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["die Kluft, -¨e","прірва; розрив","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Kurator, -en","куратор","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["die Performance, -s","перформанс","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Tribut, -e","данина; пошана","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Winkel, - (hier: kleiner Ort)","закуток; невелике місце","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Zeitgeist (Sg.)","дух часу","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["angehen (+ Akk.), ging ... an, ist ... angegangen","стосуватися; братися до чогось","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["Was die Besucher angeht, ...","що стосується відвідувачів, ...","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["dahinterstecken","стояти за чимось; приховуватися за чимось","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["institutionalisieren","інституціоналізувати","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["konzipieren","розробляти концепцію","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["platzieren","розміщувати","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["verbleiben, verblieb, ist verblieben","залишатися","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["wirbeln","кружляти; здіймати вихор","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["jemandem einen Gefallen tun, tat, hat getan","зробити комусь послугу","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["den Grundstein für etwas legen","закласти основу чогось","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["vertreten sein","бути представленим","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["lateinisch","латинський","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["trivial","банальний; тривіальний","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Nabel der Welt","пуп землі; центр світу","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der öffentliche Raum","публічний простір","Lehrbuch · Lektion 5 · Lesen · S. 64–65"],["der Durchbruch, -¨e","прорив","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["die Epoche, -n","епоха","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["das Handout, -s","роздатковий матеріал","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["die Skizze, -n","ескіз; начерк","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["das Urheberrecht, -e","авторське право","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["der Vorläufer, -","попередник","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["der Werdegang (Sg.)","життєвий шлях; кар'єрний шлях","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["das Zitat, -e","цитата","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["der Zyklus, Zyklen","цикл","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["zitieren","цитувати","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["einen Überblick geben","дати огляд","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["ein Resümee ziehen, zog, hat gezogen","підбити підсумки","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["originell","оригінальний","Lehrbuch · Lektion 5 · Sprechen · S. 66–67"],["der Galerist, -en","галерист","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["das Lehramt (Sg.)","педагогічна спеціальність; вчительська професія","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["die Option, -en","варіант; можливість","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["der Raumausstatter, -","декоратор інтер'єру","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["der Sponsor, -en","спонсор","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["das Verfahren, -","процедура; метод","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["viel/wenig/nichts halten von, hielt, hat gehalten","бути високої/низької думки; не схвалювати","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["nachahmen (+ Akk.)","наслідувати; імітувати","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["sich/jemanden überfordern","перевантажувати себе/когось","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["vermarkten","просувати на ринку; продавати","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["etwas außer Acht lassen, ließ, hat gelassen","не брати щось до уваги","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["beeindruckt sein","бути враженим","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["sich ein zweites Standbein zulegen","створити собі друге джерело доходу","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["umfangreich","об'ємний; широкий за обсягом","Lehrbuch · Lektion 5 · Schreiben · S. 68–69"],["der Staub (Sg.)","пил","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["das Unaussprechliche","невимовне","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["angucken","дивитися; розглядати","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["etwas bewirken (bei)","спричиняти; мати вплив на","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["hinterlassen, hinterließ, hat hinterlassen","залишати після себе","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["verblüffen","дивувати; приголомшувати","Lehrbuch · Lektion 5 · Sehen und Hören 2 · S. 70–71"],["die Akademie, -n","академія","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["das Design (Sg.)","дизайн","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Fachrichtung, -en","спеціалізація; напрям навчання","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Geografie (Sg.)","географія","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Germanistik (Sg.)","германістика","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["das Ingenieurwesen (Sg.)","інженерна справа","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["das Jus, Jura (Recht, Rechtswissenschaft)","правознавство; юриспруденція","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Konstruktion, -en","конструкція; конструювання","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die bildende Kunst, -¨e","образотворче мистецтво","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Präferenz, -en","перевага; вподобання","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["das Prinzip, die Prinzipien","принцип","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Sozialarbeit (Sg.)","соціальна робота","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Sozialpädagogik (Sg.)","соціальна педагогіка","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Studienordnung, -en","положення про навчання","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["simulieren","симулювати; моделювати","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["einen Streit schlichten","залагодити суперечку","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["im Mittelpunkt stehen, stand, hat/ist gestanden","бути в центрі уваги","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["fern","далекий; далеко","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["samt","разом із; включно з","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["zuliebe","заради когось","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["im weitesten Sinne","у найширшому сенсі","Lehrbuch · Lektion 6 · Lesen 1 · S. 74–75"],["die Bilanz, -en","баланс; підсумок","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Eleganz (Sg.)","елегантність","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["der Enthusiasmus (Sg.)","ентузіазм","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["der Feminismus (Sg.)","фемінізм","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Kompetenz, -en","компетентність; повноваження","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Konkurrenz (Sg.)","конкуренція","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Periode, -n","період","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Recherche, -n","дослідження; пошук інформації","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Resonanz, -en","резонанс; відгук","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["der Sarkasmus (Sg.)","сарказм","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["der Volontär, -e","стажер; волонтер","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["sich auswirken auf (+ Akk.)","впливати на","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["sich (Dat.) etwas einfangen, fing ein, hat eingefangen","підхопити щось; отримати собі щось","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["einführen","запроваджувати; вводити","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["ergeben, ergab, hat ergeben","давати результат; виявляти","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["ermitteln","визначати; з'ясовувати","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["ans (Tages)Licht bringen, brachte, hat gebracht","виводити на світло; викривати","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["eine lange Leitung haben","повільно розуміти; туго міркувати","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["geschlechtlich","статевий; гендерний","Lehrbuch · Lektion 6 · Wortschatz · S. 76"],["die Ausführung, -en","виконання; реалізація","Lehrbuch · Lektion 6 · Hören · S. 77"],["die/der Dozierende, -n","викладач / викладачка","Lehrbuch · Lektion 6 · Hören · S. 77"],["die/der Frauenbeauftragte, -n","уповноважена / уповноважений з питань жінок","Lehrbuch · Lektion 6 · Hören · S. 77"],["das Geschlecht, -er","стать; рід","Lehrbuch · Lektion 6 · Hören · S. 77"],["die Gleichstellung (Sg.)","рівноправність; забезпечення рівності","Lehrbuch · Lektion 6 · Hören · S. 77"],["die Orthografie, -n (meist Sg.)","орфографія","Lehrbuch · Lektion 6 · Hören · S. 77"],["die Publikation, -en","публікація","Lehrbuch · Lektion 6 · Hören · S. 77"],["der Schriftverkehr (Sg.)","листування; ділова кореспонденція","Lehrbuch · Lektion 6 · Hören · S. 77"],["differenzieren","розрізняти; диференціювати","Lehrbuch · Lektion 6 · Hören · S. 77"],["referieren","робити доповідь; викладати","Lehrbuch · Lektion 6 · Hören · S. 77"],["einseitig","однобічний","Lehrbuch · Lektion 6 · Hören · S. 77"],["fundiert","обґрунтований; ґрунтовний","Lehrbuch · Lektion 6 · Hören · S. 77"],["spezifisch","специфічний; особливий","Lehrbuch · Lektion 6 · Hören · S. 77"],["die öffentliche Einrichtung, -en","державна або громадська установа","Lehrbuch · Lektion 6 · Hören · S. 77"],["der Ansprechpartner, -","контактна особа","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["der Außenhandel (Sg.)","зовнішня торгівля","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["der Austausch (Sg.)","обмін","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["die Besonderheit, -en","особливість","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["der Bezug, -¨e","зв'язок; відношення","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["der Mentor, -en","ментор; наставник","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["die Perspektive, -n","перспектива","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["die/der Studierende, -n","студент / студентка","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["das Studium, die Studien","навчання у виші; студії","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["das Bachelor-/Masterstudium","навчання на бакалавраті / у магістратурі","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["der Überblick über (+ Akk.)","огляд чогось","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["ein Referat, eine Vorlesung halten, hielt, hat gehalten","виголошувати доповідь; читати лекцію","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["sich wohlfühlen","почуватися добре","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["vor den Kopf gestoßen sein","бути ображеним; почуватися зачепленим","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["schade sein","бути шкода","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["anschaulich","наочний; зрозумілий","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["verstörend","тривожний; приголомшливий","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["vertieft","заглиблений; поглиблений","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["dementsprechend","відповідно; отже","Lehrbuch · Lektion 6 · Lesen 2 · S. 78–79"],["die Äußerung, -en","висловлювання; заява","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["die Mitschrift, -en","конспект; запис лекції","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["anfertigen","виготовляти; складати","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["bibliografieren","складати бібліографію","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["jemandem einleuchten","бути зрозумілим комусь","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["exzerpieren","робити виписки з тексту","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["mitnotieren","занотовувати паралельно","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["zu einer Einigung kommen, kam, ist gekommen","дійти згоди","Lehrbuch · Lektion 6 · Sprechen · S. 80"],["die Anekdote, -n","анекдот; коротка історія","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["die Ansprache, -n","промова; звернення","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["die Ausdrucksweise, -n","манера висловлювання","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["das Potenzial, -e","потенціал","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["das Statement, -s","заява; висловлення","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["die Brüstung, -en","парапет; огорожа","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["die Sekundärliteratur, -en","вторинна література; наукова критика","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["Erfahrungen einfließen lassen, ließ, hat gelassen","враховувати власний досвід","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["peinlich","незручний; соромний","Lehrbuch · Lektion 6 · Sehen und Hören 1 · S. 81"],["der Abstand, -¨e","відстань; дистанція","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["anfassen","торкатися; брати руками","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["antippen","легенько торкнутися; набрати текст","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["schlendern","неквапливо прогулюватися","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["expressiv","експресивний; виразний","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["interkulturell","міжкультурний","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["mäßig","помірний","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["reserviert","стриманий; зарезервований","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["tragfähig","життєздатний; надійний","Lehrbuch · Lektion 6 · Schreiben · S. 82"],["das BAföG (Sg.)","державна допомога студентам у Німеччині","Lehrbuch · Lektion 6 · Sehen und Hören 2 · S. 83"],["der ECTS-Punkt, -e","кредит ECTS","Lehrbuch · Lektion 6 · Sehen und Hören 2 · S. 83"],["die Einschreibung, -en","зарахування; реєстрація на навчання","Lehrbuch · Lektion 6 · Sehen und Hören 2 · S. 83"],["das Stipendium, Stipendien","стипендія","Lehrbuch · Lektion 6 · Sehen und Hören 2 · S. 83"],["unvorhergesehen","непередбачений","Lehrbuch · Lektion 7 · Einstiegsseite · S. 85"],["der Parasit, -en","паразит","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["der Schmarotzer, -","дармоїд; паразит","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["der Tramp(er), -","мандрівник автостопом","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["die Utopie, -n","утопія","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sich ausdrücken in (+ Dat.)","виражатися в чомусь","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sich bemessen nach, bemaß, hat bemessen","визначатися за; вимірюватися чимось","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sich einbringen in (+ Akk.), brachte ein, hat eingebracht","долучатися; робити внесок","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sanieren","оздоровлювати фінансово; ремонтувати","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sich etwas bewusst machen","усвідомлювати щось","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["jemanden in Verlegenheit bringen, brachte, hat gebracht","ставити когось у незручне становище","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["sich schwer tun mit etwas, tat, hat getan","мати труднощі з чимось","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["auf Kosten anderer","за рахунок інших","Lehrbuch · Lektion 7 · Lesen 1 · S. 86–87"],["der Bezirk, -e","округ; район","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Mahnung, -en","нагадування про оплату; попередження","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Prävention, -en","профілактика; запобігання","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Ratenzahlung, -en","виплата частинами; розстрочка","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Schuldenfalle, -n","боргова пастка","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Wohlfahrt (meist Sg.)","добробут; благодійність","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["es geht um","йдеться про","Lehrbuch · Lektion 7 · Sehen und Hören · S. 88–89"],["die Auflage, -n (hier: zu erfüllende Verpflichtungen)","умова; зобов'язання","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["der Ausweg, -e","вихід зі складної ситуації","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["die/der Betroffene, -n","постраждала / постраждалий; особа, якої це стосується","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["der Gläubiger, -","кредитор","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["die Insolvenz, -en","неплатоспроможність; банкрутство","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["der Schuldner, -","боржник","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["das Verfahren, -","процедура; провадження","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["die Verfassung (hier: psychisch, Sg.)","стан; психологічне самопочуття","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["sich begeben, begab, hat begeben","вирушати; прямувати","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["geraten in (+ Akk.), geriet, ist geraten","потрапляти в ситуацію","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["sich überschulden","надмірно заборгувати","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["jemandem zustehen, stand zu, hat zugestanden","належати комусь за правом","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["etwas/jemanden ansehen als, sah an, hat angesehen","вважати щось/когось кимось або чимось","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["sich gegenseitig/wechselseitig bedingen","взаємно зумовлювати одне одного","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["Schiffbruch erleiden, erlitt, hat erlitten","зазнати краху; зазнати невдачі","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["auf sich nehmen, nahm, hat genommen","брати на себе; миритися з тягарем","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["abgesehen von","не враховуючи; окрім","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["betroffen sein von","бути зачепленим чимось","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["insolvent sein","бути неплатоспроможним","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["außergerichtlich","позасудовий","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["aufgrund (+ Gen.)","через; на підставі","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["mangels (+ Gen.)","через відсутність","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["zumal","тим паче; особливо з огляду на","Lehrbuch · Lektion 7 · Lesen 2 · S. 90–91"],["der Boom (Sg.)","бум; стрімке зростання","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["die Konjunktur, -en","економічна кон'юнктура","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["der Landwirt, -e","фермер; сільськогосподарський виробник","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["der Mindestlohn, -¨e","мінімальна зарплата","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["die Prognose, -n","прогноз","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["die Quote, -n","квота; показник","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["das Wachstum (Sg.)","зростання","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["prognostizieren","прогнозувати","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["hiesig","місцевий","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["abseits","осторонь; за межами","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["ehemals","колись; раніше","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["mehrmals","кілька разів","Lehrbuch · Lektion 7 · Wortschatz · S. 92"],["die Grundsicherung (Sg.)","базове соціальне забезпечення","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["einhaken","втручатися в розмову; зачіплювати","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["investieren in (+ Akk.)","інвестувати в","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["jemanden unterbrechen, unterbrach, hat unterbrochen","перебивати когось","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["jemanden ausreden lassen, ließ ausreden, hat ausreden lassen","дати комусь договорити","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["obdachlos","бездомний","Lehrbuch · Lektion 7 · Sprechen · S. 93"],["die Bankleitzahl, -en","банківський код","Lehrbuch · Lektion 7 · Hören · S. 94"],["das Bargeld (Sg.)","готівка","Lehrbuch · Lektion 7 · Hören · S. 94"],["die Behörde, -n","державний орган; установа","Lehrbuch · Lektion 7 · Hören · S. 94"],["der Code, -s","код","Lehrbuch · Lektion 7 · Hören · S. 94"],["der Dauerauftrag, -¨e","постійне платіжне доручення","Lehrbuch · Lektion 7 · Hören · S. 94"],["die Lastschrift, -en","пряме дебетування; списання коштів","Lehrbuch · Lektion 7 · Hören · S. 94"],["der Transfer, -s","переказ; трансфер","Lehrbuch · Lektion 7 · Hören · S. 94"],["die Währung, -en","валюта","Lehrbuch · Lektion 7 · Hören · S. 94"],["der Zahlungsverkehr (Sg.)","платіжний обіг","Lehrbuch · Lektion 7 · Hören · S. 94"],["die Ziffer, -n","цифра","Lehrbuch · Lektion 7 · Hören · S. 94"],["das Budget, -s","бюджет","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["der Kanton, -e","кантон","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["liegen bei, lag, hat/ist gelegen","становити певну величину","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["geballt sein","бути сконцентрованим","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["erheblich","значний; істотний","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["schätzungsweise","орієнтовно; за оцінками","Lehrbuch · Lektion 7 · Schreiben · S. 95"],["die Depression, -en","депресія","Lehrbuch · Lektion 8 · Einstiegsseite · S. 97"],["die Empathie (Sg.)","емпатія; співпереживання","Lehrbuch · Lektion 8 · Einstiegsseite · S. 97"],["die Individualität, -en","індивідуальність","Lehrbuch · Lektion 8 · Einstiegsseite · S. 97"],["die Psychosomatik (Sg.)","психосоматика","Lehrbuch · Lektion 8 · Einstiegsseite · S. 97"],["zu tun haben mit, hatte zu tun, hat zu tun gehabt","мати справу з; бути пов'язаним із","Lehrbuch · Lektion 8 · Einstiegsseite · S. 97"],["das Defizit, -e","дефіцит; нестача","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["der Gradmesser, -","мірило; показник","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["die Konstante, -n","константа; стала величина","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["der Parameter, -","параметр","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["die Resistenz, -en","стійкість; опірність","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["die Vernunft (Sg.)","розум; здоровий глузд","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["die Weisheit, -en","мудрість","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["(sich) abgrenzen von","відмежовувати(ся) від","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["etwas betrachten als","розглядати щось як","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["einschätzen","оцінювати","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["meistern","опановувати; долати","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["schätzen (hier: respektieren)","цінувати; поважати","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["verkennen, verkannte, hat verkannt","неправильно оцінювати; недооцінювати","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["vermögen, vermag, hat vermocht","бути спроможним; могти","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["wahrnehmen, nahm wahr, hat wahrgenommen","сприймати; помічати","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["sich zurechtfinden mit, fand zurecht, hat zurechtgefunden","давати собі раду з чимось","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["in den Sinn kommen, kam, ist gekommen","спадати на думку","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["intuitiv","інтуїтивний","Lehrbuch · Lektion 8 · Lesen 1 · S. 98–99"],["der Gefühlsausbruch, -¨e","вибух емоцій","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["der Impuls, -e","імпульс; порив","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["das Selbstwertgefühl, -e","почуття власної гідності","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["erlangen","здобувати; досягати","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["sich etwas gönnen","дозволяти собі щось приємне","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["sich hineinversetzen in (+ Akk.)","ставити себе на чиєсь місце","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["etwas angebracht finden, fand, hat gefunden","вважати щось доречним","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["etwas im Griff haben","тримати щось під контролем","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["berufsmäßig","професійно","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["feindselig","ворожий","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["gefühlsbetont","емоційно забарвлений","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["gefühlsmäßig","на рівні почуттів","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["ideell","ідеальний; духовний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["kurz-/langfristig","коротко-/довгостроковий","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["reell","реальний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["sensationell","сенсаційний; неймовірний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["sensibel","чутливий; делікатний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["substanziell","суттєвий; значний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["virtuell","віртуальний","Lehrbuch · Lektion 8 · Wortschatz · S. 100"],["die Anziehungskraft, -¨e","сила тяжіння; привабливість","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["der Rückschluss, -¨e","висновок","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["das Temperament, -e","темперамент","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["ausweichen, wich aus, ist ausgewichen","ухилятися; уникати","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["ertappen","спіймати на гарячому","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["hinnehmen, nahm hin, hat hingenommen","змиритися; прийняти","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["verbergen vor (+ Dat.), verbarg, hat verborgen","приховувати від","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["jemanden aus dem Konzept bringen, brachte, hat gebracht","збивати когось з пантелику","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["beschämend","ганебний; соромний","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["einfühlsam","чуйний; емпатійний","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["gelegentlich","іноді; час від часу","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["indiskutabel","неприйнятний; поза обговоренням","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["rentabel","рентабельний; прибутковий","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["vertrauensselig","надмірно довірливий","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["vordergründig","поверховий; на перший погляд","Lehrbuch · Lektion 8 · Sprechen · S. 101"],["der Balken, -","балка; брус","Lehrbuch · Lektion 8 · Schreiben · S. 102"],["der Freiraum, -¨e","вільний простір; свобода дій","Lehrbuch · Lektion 8 · Schreiben · S. 102"],["modulieren","модулювати; змінювати інтонацію","Lehrbuch · Lektion 8 · Schreiben · S. 102"],["etwas miteinander verknüpfen","поєднувати щось між собою","Lehrbuch · Lektion 8 · Schreiben · S. 102"],["beträchtlich","значний; чималий","Lehrbuch · Lektion 8 · Schreiben · S. 102"],["die Symptomatik (Sg.)","симптоматика","Lehrbuch · Lektion 8 · Hören · S. 103"],["jemanden bedrücken","гнітити когось","Lehrbuch · Lektion 8 · Hören · S. 103"],["sich einer Sache bedienen","користуватися чимось","Lehrbuch · Lektion 8 · Hören · S. 103"],["die Auffälligkeit, -en","помітна особливість; відхилення","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Ausdauer (Sg.)","витривалість","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["der (soziale) Brennpunkt, -e","соціально проблемний район; осередок проблем","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Feigheit, -en","боягузтво","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Gewissenhaftigkeit (Sg.)","сумлінність","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Hypnose (Sg.)","гіпноз","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["der Mut (Sg.)","сміливість; мужність","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Nachlässigkeit, -en","недбалість","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Psyche, -n","психіка","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die Psychoanalyse (Sg.)","психоаналіз","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["die (soziale) Schere (Sg.)","соціальна нерівність; розрив між групами","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["das Schuldgefühl, -e","почуття провини","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["das Umfeld, -er","оточення; середовище","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["das Verhaltensmuster, -","модель поведінки","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["der Versprecher, -","обмовка","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["das Zeitalter, -","епоха","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["ankommen auf (+ Akk.), kam an, ist angekommen","залежати від","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["belegen (hier: aufzeigen, beweisen)","підтверджувати; доводити","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["beitragen zu, trug bei, hat beigetragen","сприяти; робити внесок","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["darlegen","викладати; пояснювати","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["jemanden fesseln (hier: faszinieren)","захоплювати; заворожувати","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["verschlüsseln","шифрувати","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["zurechtkommen mit, kam zurecht, ist zurechtgekommen","давати собі раду; справлятися з","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["jemanden zu etwas bringen, brachte, hat gebracht","спонукати когось до чогось","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["sich in eine neue Rolle einfinden, fand sich ein, hat sich eingefunden","адаптуватися до нової ролі","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["hinter die Kulissen schauen","зазирнути за лаштунки","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["in die Lage versetzen","надати можливість; зробити здатним","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["ausschlaggebend","вирішальний","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["eingefahren (hier: gewohnt)","усталений; звичний","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["provokant","провокаційний","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["überholt (hier: nicht mehr aktuell)","застарілий","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["unbewusst","несвідомий","Lehrbuch · Lektion 8 · Lesen 2 · S. 104–106"],["bestehen in (+ Dat.), bestand, hat bestanden","полягати в","Lehrbuch · Lektion 8 · Sehen und Hören · S. 107"],["veranschaulichen","унаочнювати; ілюструвати","Lehrbuch · Lektion 8 · Sehen und Hören · S. 107"],["der Entwurf, -¨e","проєкт; ескіз","Lehrbuch · Lektion 9 · Einstiegsseite · S. 109"],["die Schiene, -n","рейка; напрямок","Lehrbuch · Lektion 9 · Einstiegsseite · S. 109"],["die Vision, -en","бачення; візія","Lehrbuch · Lektion 9 · Einstiegsseite · S. 109"],["das Abwasser, -¨","стічна вода","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["der Feinstaub (Sg.)","дрібнодисперсний пил","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["der Kollektor, -en","колектор; збирач","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Kommune, -n","громада; муніципалітет","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Metropole, -n","мегаполіс","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Optik, -en","оптика; зовнішній вигляд","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["der Pionier, -e","піонер; першопроходець","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["der Smog (Sg.)","смог","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Solarzelle, -n","сонячний елемент","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["das Treibhausgas, -e","парниковий газ","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Unmenge, -n","величезна кількість","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Urbanisierung, -en","урбанізація","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["der Zustrom, -¨e","приплив; наплив","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["anlocken","приваблювати; заманювати","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["appellieren","закликати","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["ausstopfen","набивати; наповнювати","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["entgegenwirken","протидіяти","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["surren","дзижчати; гудіти","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["Energie einspeisen","подавати енергію в мережу","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["die Grundlage für etwas legen","закласти основу для чогось","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["innovativ","інноваційний","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["quirlig","жвавий; метушливий","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["ungebremst","нестримний","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["ungeklärt (hier: unsauber)","неочищений","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["andernfalls","інакше; в іншому разі","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["unter der Bedingung, dass","за умови, що","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["im Falle, dass","у випадку, якщо","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["sofern","за умови, що","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["sonst","інакше","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["vorausgesetzt, dass","за умови, що","Lehrbuch · Lektion 9 · Lesen 1 · S. 110–112"],["das Beet, -e","грядка; клумба","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["der Dilettant, -en","дилетант","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["die Diversität (Sg.)","різноманіття","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["etwas ansetzen (hier: anpflanzen)","висаджувати; садити","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["spießig","міщанський; обмежений","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["neuerdings","останнім часом","Lehrbuch · Lektion 9 · Sehen und Hören · S. 113"],["die Hektik (Sg.)","метушня; поспіх","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["sich fernhalten von (+ Dat.), hielt fern, hat ferngehalten","триматися осторонь від","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["anonym","анонімний","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["sich einer Sache bewusst werden","усвідомлювати щось","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["dahingehend","у цьому сенсі; щодо цього","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["derartig","такий; подібний","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["womöglich","можливо; цілком імовірно","Lehrbuch · Lektion 9 · Schreiben · S. 114"],["die Bevölkerungsdichte (Sg.)","густота населення","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Diskrepanz, -en (zwischen + Dat.)","невідповідність; розбіжність між","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Provinz, -en","провінція","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Siedlung, -en","поселення","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Sparkasse, -n","ощадна каса","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Tristesse, -n","смуток; безрадісність","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["die Wanderschaft (Sg.)","мандри; мандрівне життя","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["kreuzen","перетинати; схрещувати","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["angewiesen auf (+ Akk.)","залежний від; змушений покладатися на","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["aufgeschlossen gegenüber (+ Dat.)","відкритий до чогось","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["bemüht um (+ Akk.)","той, хто намагається; докладає зусиль","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["dankbar für (+ Akk.)","вдячний за","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["erfahren in (+ Dat.)","досвідчений у","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["erfreut über (+ Akk.)","радий чомусь","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["gespannt auf (+ Akk.)","у передчутті; з нетерпінням очікувати","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["überzeugt von","переконаний у","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["zufrieden mit","задоволений чимось","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["einen trockenen Humor haben","мати сухе почуття гумору","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["eine spitze Zunge haben","мати гострий язик","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["kurzweilig","захопливий; ненудний","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["zurzeit","зараз; нині","Lehrbuch · Lektion 9 · Wortschatz · S. 115"],["der Aussteiger, -","людина, що відмовилася від звичного способу життя","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["der Eigenbedarf (Sg.)","власні потреби","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["das Glasfasernetz, -e","оптоволоконна мережа","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Nutzfläche, -n","корисна площа","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Schlosserwerkstatt, -¨en","слюсарна майстерня","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Schneiderei, -en","кравецька майстерня","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Urkunde, -n","документ; грамота","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["der Vorstand, -¨e","правління; керівництво","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Ziege, -n","коза","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["los sein (hier: etwas passiert)","відбуватися; траплятися","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["alternativ (hier: anders als das bisher Übliche)","альтернативний; нетрадиційний","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["belästigt","потурбований; переслідуваний","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["obschon","хоча; попри те, що","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["obgleich","хоча","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["ungeachtet (+ Gen.)","незважаючи на","Lehrbuch · Lektion 9 · Lesen 2 · S. 116"],["die Linde, -n","липа","Lehrbuch · Lektion 9 · Hören · S. 117"],["der Blickkontakt, -e","зоровий контакт","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["die Jury, -s","журі","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["der Kontrahent, -en","суперник; опонент","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["etwas ausführen (hier: erklären)","пояснювати; докладно викладати","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["etwas behaupten","стверджувати щось","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["etwas erwidern","відповідати; заперечувати","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["fungieren","виконувати функцію","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["hinterfragen","критично осмислювати; ставити під сумнів","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["nicken","кивати головою","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["präzisieren","уточнювати","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["ein Argument anbringen, brachte an, hat angebracht","наводити аргумент","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["an einem Punkt ansetzen","починати з певного пункту","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["angemessen","доречний; відповідний","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["schlagend (hier: ein schlagendes Argument)","переконливий; вагомий","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["stichhaltig","обґрунтований; переконливий","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["beziehungsweise","відповідно; або точніше","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["respektive","відповідно; а саме","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["vielmehr","радше; навпаки","Lehrbuch · Lektion 9 · Sprechen · S. 118–119"],["der Ausspruch, -¨e","вислів; афоризм","Lehrbuch · Lektion 10 · Einstiegsseite · S. 121"],["der Schmetterling, -e","метелик","Lehrbuch · Lektion 10 · Einstiegsseite · S. 121"],["ahnen","передчувати; здогадуватися","Lehrbuch · Lektion 10 · Einstiegsseite · S. 121"],["die Erkenntnis, -se","пізнання; усвідомлення","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Fantasie, -n","фантазія","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Frustration, -en","фрустрація; розчарування","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Intensität, -en","інтенсивність","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Irrtum, -¨er","помилка; хибне уявлення","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Kreativität (Sg.)","креативність; творчість","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Literat, -en","літератор; письменник","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Manipulation, -en","маніпуляція","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Naivität (Sg.)","наївність","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Philosoph, -en","філософ","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Philosophie, -n","філософія","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Reichtum, -¨er","багатство","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Ruhm (Sg.)","слава","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Spekulation, -en","спекуляція; припущення","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Untergang, -¨e","занепад; загибель","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Verrat (Sg.)","зрада","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["der Zugang, -¨e","доступ; підхід","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["beiwohnen (hier: dabei sein)","бути присутнім","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["eintauchen","занурюватися","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["empfinden, empfand, hat empfunden","відчувати","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["versinken, versank, ist versunken","поринати; тонути","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["etwas abtun als, tat ab, hat abgetan","відкидати щось як неважливе","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Rede sein von","йтися про","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["auf Anhieb verstehen, verstand, hat verstanden","зрозуміти з першої спроби","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["präzise","точний","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["pur","чистий; суцільний","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["restlos","повністю; без залишку","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["süchtig","залежний; одержимий","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["winzig","крихітний","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["zugleich","водночас","Lehrbuch · Lektion 10 · Lesen 1 · S. 122–123"],["die Auslegung, -en","тлумачення; інтерпретація","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Gegenspieler, -","супротивник; антагоніст","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Handlungsstrang, -¨e","сюжетна лінія","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["die Identität, -en","ідентичність","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["die Lektüre, -n","читання; прочитаний твір","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["die Lesart, -en","тлумачення; інтерпретація","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Plot, -s","сюжет","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Protagonist, -en","головний герой","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Schauplatz, -¨e","місце дії","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["der Spannungsbogen, -¨","розвиток напруження; драматична напруга","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["agieren","діяти","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["etwas ansiedeln (hier: platzieren)","розміщувати; локалізувати","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["etwas auslegen (hier: interpretieren)","тлумачити; інтерпретувати","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["jemanden in den Bann ziehen, zog, hat gezogen","зачаровувати; полонити увагу","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["identitätsstiftend","той, що формує ідентичність","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["stimmig","гармонійний; узгоджений","Lehrbuch · Lektion 10 · Wortschatz · S. 124"],["die Belletristik (Sg.)","художня література","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["der Bestseller, -","бестселер","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["sich durch etwas auszeichnen","вирізнятися чимось","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["erscheinen, erschien, ist erschienen","з'являтися; виходити друком","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["es handelt sich bei ... um (+ Akk.)","йдеться про","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["jemandem etwas ans Herz legen","щиро рекомендувати комусь щось","Lehrbuch · Lektion 10 · Sprechen · S. 125"],["die Effizienz, -en","ефективність","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["die Panik, -en","паніка","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["bedauern","шкодувати; співчувати","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["schildern","описувати; зображати","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["jemandem Vorhaltungen machen","дорікати комусь","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["gehemmt","скований; загальмований","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["genussorientiert","орієнтований на задоволення","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["hemmungslos","нестримний; без гальм","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["hinterhältig","підступний","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["schüchtern","сором'язливий","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["sorgfältig","ретельний","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["spurlos","безслідно","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["treffend","влучний","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["unberechenbar","непередбачуваний","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["verkrampft","напружений; скутий","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["verunsichert","невпевнений; збентежений","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["währenddessen","тим часом","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["woraufhin","після чого; унаслідок чого","Lehrbuch · Lektion 10 · Lesen 2 · S. 126–127"],["die Adaption, -en","адаптація","Lehrbuch · Lektion 10 · Hören · S. 128"],["die Bebilderung, -en","ілюстрування","Lehrbuch · Lektion 10 · Hören · S. 128"],["die Dramaturgie, -n","драматургія","Lehrbuch · Lektion 10 · Hören · S. 128"],["die Einmischung, -en","втручання","Lehrbuch · Lektion 10 · Hören · S. 128"],["sich einmischen in (+ Akk.)","втручатися в","Lehrbuch · Lektion 10 · Hören · S. 128"],["dramaturgisch","драматургічний","Lehrbuch · Lektion 10 · Hören · S. 128"],["der Einfall, -¨e","ідея; раптова думка","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["das Gedicht, -e","вірш","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["der Klang, -¨e","звук; звучання","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["die Silbe, -n","склад","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["der Vers, -e","віршований рядок","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["abschließen (hier: beenden), schloss ab, hat abgeschlossen","закінчувати; завершувати","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["knien","стояти навколішки","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["(sich) reimen","римувати(ся)","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["wiederkehren","повертатися; повторюватися","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["jemandem ist um etwas bange","хтось тривожиться через щось","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["sich gut halten, hielt, hat gehalten","добре зберігатися; добре триматися","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["kompatibel","сумісний","Lehrbuch · Lektion 10 · Schreiben · S. 129–130"],["die Inspiration, -en","натхнення","Lehrbuch · Lektion 10 · Sehen und Hören · S. 131"],["die Phase, -n","фаза; етап","Lehrbuch · Lektion 10 · Sehen und Hören · S. 131"],["der Verlag, -e","видавництво","Lehrbuch · Lektion 10 · Sehen und Hören · S. 131"],["der Vorzug, -¨e","перевага","Lehrbuch · Lektion 10 · Sehen und Hören · S. 131"],["zwecks (+ Gen.)","з метою; задля","Lehrbuch · Lektion 10 · Sehen und Hören · S. 131"],["die Entscheidungsfindung, -en","ухвалення рішення","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["die Intention, -en","намір; інтенція","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["das Regelwerk, -e","звід правил","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["der Schock, -s","шок","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["das Statussymbol, -e","символ статусу","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["die Tagesordnung, -en","порядок денний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["etwas ausmerzen","викорінювати; усувати","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["grenzen an (+ Akk.)","межувати з","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["sich etwas verderben, verdarb, hat verdorben","зіпсувати собі щось","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["klarmachen","пояснювати; усвідомлювати","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["einen Fehler begehen, beging, hat begangen","припускатися помилки","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["viel/wenig Wert legen auf (+ Akk.)","надавати великого/малого значення","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["arrogant","зарозумілий","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["bescheiden","скромний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["ersichtlich","очевидний; помітний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["gründlich","ґрунтовний; ретельний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["minutiös","надзвичайно детальний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["pragmatisch","прагматичний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["ruppig","грубий; різкий","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["wesentlich","суттєвий; основний","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["demnach","отже; відповідно","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["demzufolge","отже; унаслідок цього","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["derartig, dass","настільки, що","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["ein derartig, dass","такий, що","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["infolge (+ Gen.)","унаслідок","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["infolge von","через; унаслідок","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["infolgedessen","унаслідок цього","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["solch ein","такий","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["ein solch","такий","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["weshalb","чому; через що","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["weswegen","чому; з якої причини","Lehrbuch · Lektion 11 · Lesen 1 · S. 134–135"],["individualistisch","індивідуалістичний","Lehrbuch · Lektion 11 · Hören · S. 136"],["kollektivistisch","колективістський","Lehrbuch · Lektion 11 · Hören · S. 136"],["sogenannt","так званий","Lehrbuch · Lektion 11 · Hören · S. 136"],["im Nachhinein","згодом; заднім числом","Lehrbuch · Lektion 11 · Hören · S. 136"],["das Outfit, -s","вбрання; зовнішній вигляд","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["ablenken von","відволікати від","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["gelten als, galt, hat gegolten","вважатися кимось/чимось","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["gedeckt (hier: gedeckte Farben)","стриманий; приглушений (про кольори)","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["leger","невимушений; повсякденний","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["das ist ein Muss","це обов'язково; необхідність","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["im Zweifel","у разі сумніву","Lehrbuch · Lektion 11 · Wortschatz 1 · S. 137"],["die Etikette (Sg.)","етикет","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["die Hilfsbereitschaft (Sg.)","готовність допомогти","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["der Ranghöhere, -n","вищий за рангом","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["der Rangniedere, -n","нижчий за рангом","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["sich einer Sache (+ Gen.) erfreuen","користуватися чимось; тішитися чимось","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["niesen","чхати","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["sich orientieren an (+ Dat.)","орієнтуватися на","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["repräsentieren","представляти; репрезентувати","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["etwas strapazieren","надмірно використовувати; випробовувати","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["Rücksprache halten mit (+ Dat.), hielt, hat gehalten","радитися з кимось","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["einen positiven/negativen Eindruck hinterlassen, hinterließ, hat hinterlassen","справляти позитивне/негативне враження","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["richtig liegen mit, lag, hat/ist gelegen","мати рацію щодо","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["viel/wenig Aufheben(s) machen von (+ Dat.) / um (+ Akk.)","робити багато/мало галасу навколо чогось","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["erwünscht sein","бути бажаним","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["unverschämt","нахабний; безсоромний","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["zaghaft","несміливий; нерішучий","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["in Maßen","у міру","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["immerhin","усе-таки; принаймні","Lehrbuch · Lektion 11 · Schreiben · S. 138"],["die Hypothese, -n","гіпотеза","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["erarbeiten","опрацьовувати; розробляти","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["eröffnen","відкривати","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["reformieren","реформувати","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["reintegrieren","реінтегрувати","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["revidieren","переглядати; виправляти","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["ernüchtert sein","бути розчарованим; протверезіти від ілюзій","Lehrbuch · Lektion 11 · Wortschatz 2 · S. 139"],["das Forum, die Foren","форум","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["der Intellekt (Sg.)","інтелект","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["die Irritation, -en","роздратування; збентеження","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["der Reibungspunkt, -e","предмет суперечки; точка тертя","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["etwas beibehalten, behielt bei, hat beibehalten","зберігати; не змінювати","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["etwas erschweren","ускладнювати","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["punkten mit","здобувати очки завдяки; вирізнятися","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["jemanden versetzen (hier: jemanden ins Ausland versetzen)","переводити когось (на інше місце роботи)","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["widerspiegeln","відображати","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["etwas mit sich bringen, brachte, hat gebracht","тягнути за собою; спричиняти","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["entsetzt sein","бути нажаханим; шокованим","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["mittels (+ Gen.)","за допомогою","Lehrbuch · Lektion 11 · Lesen 2 · S. 140–141"],["die Ablöse, -n","зміна; заміна; компенсація","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["anerkennen, erkannte an, hat anerkannt","визнавати","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["etwas einbauen","вбудовувати; включати","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["pokern um (+ Akk.)","торгуватися; вести переговори за","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["sich richten nach","орієнтуватися на; дотримуватися","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["notfalls","у крайньому разі","Lehrbuch · Lektion 11 · Sprechen · S. 142"],["die Rezension, -en","рецензія; відгук","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["der Small Talk, -s","світська бесіда","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["der Trainer, - (hier: Buch, Ratgeber)","посібник; тренажер","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["durch die Hintertür kommen, kam, ist gekommen","потрапляти обхідним шляхом","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["konsequent","послідовний","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["quasi","ніби; фактично","Lehrbuch · Lektion 11 · Sehen und Hören · S. 143"],["der Modellbau (Sg.)","моделювання; виготовлення моделей","Lehrbuch · Lektion 12 · Einstiegsseite · S. 145"],["fernsteuern","керувати дистанційно","Lehrbuch · Lektion 12 · Einstiegsseite · S. 145"],["der Atem (Sg.)","дихання","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["der Bruchteil, -e","частка; дрібна частина","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["die Drohne, -n","дрон; безпілотник","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["der Finalist, -en","фіналіст","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["die Frequenz, -en","частота","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["die Geste, -n","жест","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["die Prothese, -n","протез","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["das Unterfangen, -","починання; задум","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["sich beruhigen","заспокоюватися","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["sich herausstellen","з'ясовуватися; виявлятися","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["ins Spiel kommen, kam, ist gekommen","вступати в гру; ставати актуальним","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["anschmiegsam","гнучкий; податливий","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["beträchtlich","значний; чималий","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["eigenhändig","власноручний","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["erfinderisch","винахідливий","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["fieberhaft","гарячковий; інтенсивний","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["unvergleichlich","незрівнянний","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["rundum","навколо; цілком","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["angesichts (+ Gen.)","з огляду на","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["anlässlich (+ Gen.)","з нагоди","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["hinsichtlich (+ Gen.)","стосовно; щодо","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["mithilfe (+ Gen.)","за допомогою","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["oberhalb (+ Gen.)","вище; над","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["ungeachtet (+ Gen.)","незважаючи на","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["unweit (+ Gen.)","неподалік від","Lehrbuch · Lektion 12 · Lesen 1 · S. 146–147"],["der Antrieb, -e","привід; рушійна сила","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["der Behälter, -","контейнер; ємність","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["das Gut, -¨er","товар; майно","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["das Patent, -e","патент","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["das Rauschgift, -e","наркотик","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["der Scanner, -","сканер","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["der Sprengstoff, -e","вибухова речовина","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["die Trefferquote, -n","показник влучань; точність","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["auslösen","спричиняти; запускати","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["durchschreiten, durchschritt, hat durchschritten","проходити крізь","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["erteilen","надавати; видавати","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["großschreiben, schrieb groß, hat großgeschrieben","писати з великої літери; надавати значення","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["kostenpflichtig","платний","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["potenziell","потенційний","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["umsetzbar","здійсненний; реалістичний","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["gegebenenfalls","за потреби; у відповідному випадку","Lehrbuch · Lektion 12 · Schreiben · S. 148"],["der Eingriff, -e","втручання; операція","Lehrbuch · Lektion 12 · Hören · S. 149"],["die Evolution (Sg.)","еволюція","Lehrbuch · Lektion 12 · Hören · S. 149"],["das Experimentierstadium, die Experimentierstadien","експериментальна стадія","Lehrbuch · Lektion 12 · Hören · S. 149"],["Grenzen setzen","встановлювати межі","Lehrbuch · Lektion 12 · Hören · S. 149"],["Grenzen überschreiten, überschritt, hat überschritten","переступати межі","Lehrbuch · Lektion 12 · Hören · S. 149"],["gentechnisch","генно-інженерний","Lehrbuch · Lektion 12 · Hören · S. 149"],["die Erbsubstanz, -en","спадкова речовина; генетичний матеріал","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["die Errungenschaft, -en","досягнення; здобуток","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["das Gen, -e","ген","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["umgehen mit, ging um, ist umgegangen","поводитися з; обходитися з","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["jemandem verhelfen zu, verhalf, hat verholfen","допомогти комусь здобути щось","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["zum Einsatz kommen, kam, ist gekommen","застосовуватися","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["jemandem ins Handwerk pfuschen","втручатися в чиюсь роботу","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["umstritten sein","бути спірним","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["sich einer Prozedur unterziehen, unterzog, hat unterzogen","піддаватися процедурі","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["im Wege stehen, stand, hat/ist gestanden","стояти на заваді","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["genetisch","генетичний","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["strittig","спірний","Lehrbuch · Lektion 12 · Sprechen · S. 150–151"],["das (Welt-)All (Sg.)","космос; Всесвіт","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["der Android, -en","андроїд","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["die Mimik (Sg.)","міміка","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["das Modul, -e","модуль","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["der Proband, -en","учасник дослідження; випробуваний","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["der Raumfahrer, -","космонавт","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["der Roboter, -","робот","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["der Sensor, -en","датчик; сенсор","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["ausrüsten mit","оснащувати чимось","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["formen","формувати","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["suggerieren","навіювати; вселяти","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["autistisch","аутичний","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["dunstig","імлистий; затуманений","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["finster","темний; похмурий","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["humanoid","людиноподібний","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["kaltblütig","холоднокровний","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["stumm","німий; безмовний","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["gewissermaßen","певною мірою; так би мовити","Lehrbuch · Lektion 12 · Lesen · S. 152–153"],["das Reagenzglas, -¨er","пробірка","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["durch etwas durchlaufen","проходити через щось","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. Phasen) durchlaufen, durchlief, hat durchlaufen","проходити певні етапи","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["in etwas (z. B. eine andere Materie) übergehen","переходити в інший стан або матерію","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas/jemanden übergehen, überging, hat übergangen (hier: auslassen)","пропускати; обходити увагою","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas überspringen","перестрибувати; пропускати","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. eine Klasse) überspringen, übersprang, hat übersprungen","перескакувати через клас; пропускати етап","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["zu etwas (z. B. eine andere Religion) übertreten","переходити до іншої релігії","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. eine Regel) übertreten, übertrat, hat übertreten","порушувати правило","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. ein Rad) umfahren","об'їжджати щось","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. eine Baustelle) umfahren, umfuhr, hat umfahren","об'їжджати перешкоду","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. einen Text) umschreiben","переписувати текст","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["etwas (z. B. ein unbekanntes Wort) umschreiben, umschrieb, hat umschrieben","описувати іншими словами","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["jemanden unterhalten, unterhielt, hat unterhalten (hier: finanziell unterstützen)","утримувати матеріально","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["durchdrungen sein (hier: erfüllt sein)","бути пронизаним; бути сповненим","Lehrbuch · Lektion 12 · Wortschatz · S. 154"],["die Norm, -en","норма","Lehrbuch · Lektion 12 · Sehen und Hören · S. 155"],["der Rohstoff, -e","сировина","Lehrbuch · Lektion 12 · Sehen und Hören · S. 155"]];
+const INT = [0,1,2,4,8,16,32], MAX = 6;
+let S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'' };
+let FB = null, U = null, userEmail = '', unsubs = [], cardMap = new Map();
+let ready = { p:false, c:false, m:false }, needsSetup = false, sync = { pending:false };
+let view = 'learn', session = null, bootMsg = 'Lädt …', slowTimer = null;
+let wf = { p:null, q:'', s:'all', limit:150 }, statsP = 'all';
+const imgCache = new Map();
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs){
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids.flat()){ if (k == null || k === false || k === '') continue; e.append(k.nodeType ? k : String(k)); }
+  return e;
+}
+const svg = inner => { const t = document.createElement('template'); t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`; return t.content.firstChild; };
+const ICON = {
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'
+};
+const pad = n => String(n).padStart(2,'0');
+const fmt = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today = () => fmt(new Date());
+const addDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return fmt(d); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2400); }
+const days = n => n === 1 ? 'morgen' : `in ${n} Tagen`;
+const stageName = s => s === 0 ? 'Neu' : `Stufe ${s}`;
+const tage = n => `${n} ${n === 1 ? 'Tag' : 'Tagen'}`;
+
+/* ---------- Firebase adapter ---------- */
+async function loadFirebase(cfg){
+  if (window.__FB_MOCK__) return window.__FB_MOCK__;
+  const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const [A, AU, F] = await Promise.all([import(base+'firebase-app.js'), import(base+'firebase-auth.js'), import(base+'firebase-firestore.js')]);
+  const app = A.initializeApp(cfg);
+  const auth = AU.getAuth(app);
+  let db;
+  try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
+  catch (e) { db = F.getFirestore(app); }
+  return {
+    onAuth: cb => AU.onAuthStateChanged(auth, u => cb(u ? { uid:u.uid, email:u.email } : null)),
+    signIn: (e,p) => AU.signInWithEmailAndPassword(auth, e, p),
+    signOut: () => AU.signOut(auth),
+    resetPw: e => AU.sendPasswordResetEmail(auth, e),
+    doc: (...p) => F.doc(db, ...p),
+    col: (...p) => F.collection(db, ...p),
+    listenCol: (c, cb, err) => F.onSnapshot(c, { includeMetadataChanges:true }, s => cb({
+      docs: s.docs.map(d => ({ id:d.id, data:d.data() })),
+      changes: s.docChanges().map(ch => ({ type:ch.type, id:ch.doc.id, data:ch.doc.data() })),
+      fromCache: s.metadata.fromCache, pending: s.metadata.hasPendingWrites }), err),
+    listenDoc: (r, cb, err) => F.onSnapshot(r, { includeMetadataChanges:true }, s => cb({ exists:s.exists(), data:s.exists() ? s.data() : null, fromCache:s.metadata.fromCache }), err),
+    set: (r,d) => F.setDoc(r, d),
+    del: r => F.deleteDoc(r),
+    get: async r => { const s = await F.getDoc(r); return s.exists() ? s.data() : null; },
+    getAll: async c => { const s = await F.getDocs(c); return s.docs.map(d => ({ id:d.id, data:d.data() })); },
+    batch: () => { const b = F.writeBatch(db); return { set:(r,d) => b.set(r,d), del:r => b.delete(r), commit:() => b.commit() }; }
+  };
+}
+const R = {
+  meta: () => FB.doc('users', U, 'meta', 'main'),
+  project: id => FB.doc('users', U, 'projects', id),
+  card: id => FB.doc('users', U, 'cards', id),
+  img: id => FB.doc('users', U, 'images', id),
+  projects: () => FB.col('users', U, 'projects'),
+  cards: () => FB.col('users', U, 'cards'),
+  images: () => FB.col('users', U, 'images')
+};
+function syncErr(e){ console.error(e); toast('Speichern fehlgeschlagen. Bitte neu laden.'); }
+function saveCard(c){ const { id, ...d } = c; FB.set(R.card(id), d).catch(syncErr); }
+function saveProject(p){ const { id, ...d } = p; FB.set(R.project(id), d).catch(syncErr); }
+function saveMeta(){ FB.set(R.meta(), { log:S.log, sel:S.sel, lastSrc:S.lastSrc || '' }).catch(syncErr); }
+async function runOps(ops, onProg){
+  for (let i = 0; i < ops.length; i += 400){
+    const b = FB.batch();
+    ops.slice(i, i+400).forEach(([t, r, d]) => t === 'set' ? b.set(r, d) : b.del(r));
+    await b.commit();
+    if (onProg) onProg(Math.min(ops.length, i+400), ops.length);
+  }
+}
+async function getImg(id){
+  if (imgCache.has(id)) return imgCache.get(id);
+  try { const d = await FB.get(R.img(id)); const v = d ? d.data : null; imgCache.set(id, v); return v; } catch (e) { return null; }
+}
+
+/* ---------- listeners ---------- */
+function stopListen(){ unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = []; }
+function listen(){
+  stopListen(); cardMap.clear(); imgCache.clear();
+  S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'' };
+  ready = { p:false, c:false, m:false }; needsSetup = false;
+  const onErr = e => { console.error(e); bootMsg = 'Die Daten konnten nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu.'; changed(); };
+  unsubs.push(FB.listenCol(R.projects(), s => {
+    S.projects = s.docs.map(d => ({ id:d.id, ...d.data })).sort((a,b) => (a.o||0) - (b.o||0));
+    if (!s.fromCache || s.docs.length) ready.p = true;
+    changed();
+  }, onErr));
+  unsubs.push(FB.listenCol(R.cards(), s => {
+    for (const ch of s.changes){ if (ch.type === 'removed') cardMap.delete(ch.id); else cardMap.set(ch.id, { id:ch.id, ...ch.data }); }
+    if (s.changes.length) S.cards = [...cardMap.values()].sort((a,b) => (a.o||0) - (b.o||0));
+    sync.pending = s.pending;
+    if (!s.fromCache || s.docs.length) ready.c = true;
+    changed();
+  }, onErr));
+  unsubs.push(FB.listenDoc(R.meta(), s => {
+    if (s.exists){ S.log = s.data.log || {}; S.sel = s.data.sel || []; S.lastSrc = s.data.lastSrc || ''; needsSetup = false; ready.m = true; }
+    else if (!s.fromCache){ needsSetup = true; ready.m = true; }
+    changed();
+  }, onErr));
+  clearTimeout(slowTimer);
+  slowTimer = setTimeout(() => { if (!isReady() && !needsSetup){ bootMsg = 'Keine Verbindung. Beim ersten Öffnen auf einem Gerät braucht die App Internet.'; changed(); } }, 12000);
+}
+const isReady = () => ready.p && ready.c && ready.m && !needsSetup;
+function changed(){
+  clearTimeout(changed.t);
+  changed.t = setTimeout(() => {
+    if (isReady() && !session && view === 'words' && $('#wlist')) fillList();
+    else render();
+  }, 40);
+}
+window.addEventListener('online', changed);
+window.addEventListener('offline', changed);
+
+/* ---------- model ---------- */
+const proj = id => S.projects.find(p => p.id === id);
+const card = id => cardMap.get(id);
+const isDue = (c, t) => c.s > 0 && c.d <= t;
+function newLeft(p){
+  const t = today(), lg = S.log[p.id], used = lg && lg.d === t ? lg.n : 0;
+  const avail = S.cards.reduce((n,c) => n + (c.p === p.id && c.s === 0 ? 1 : 0), 0);
+  return Math.max(0, Math.min((p.np|0) - used, avail));
+}
+function dueCount(pid){ const t = today(); return S.cards.reduce((n,c) => n + (c.p === pid && isDue(c,t) ? 1 : 0), 0); }
+function buildQueue(pids){
+  const t = today(), q = [];
+  for (const pid of pids){
+    const p = proj(pid); if (!p) continue;
+    S.cards.forEach(c => { if (c.p === pid && isDue(c,t)) q.push(c.id); });
+    S.cards.filter(c => c.p === pid && c.s === 0).slice(0, newLeft(p)).forEach(c => q.push(c.id));
+  }
+  return shuffle(q);
+}
+
+/* ---------- navigation ---------- */
+function go(v){ view = v; session = null; render(); window.scrollTo(0,0); }
+document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+function render(){
+  const main = isReady() && FB && U;
+  document.body.classList.toggle('no-tabs', !main || !!session);
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === view && !session ? 'page' : 'false'));
+  if (!FB) return renderMsg(bootMsg);
+  if (!U) return renderLogin();
+  if (needsSetup) return renderSetup();
+  if (!isReady()) return renderMsg(bootMsg);
+  if (session) return renderSession();
+  if (view === 'learn') renderLearn();
+  else if (view === 'words') renderWords();
+  else renderStats();
+}
+function renderMsg(msg){ const m = $('#main'); m.innerHTML = ''; m.append(h('div',{class:'login'}, h('p',{class:'brand'},'Karteikasten'), h('p',{class:'muted'}, msg))); }
+
+/* ---------- Login ---------- */
+function renderLogin(){
+  const m = $('#main'); m.innerHTML = '';
+  const em = h('input',{class:'field', type:'email', autocomplete:'username', inputmode:'email', placeholder:'E-Mail'});
+  const pw = h('input',{class:'field', type:'password', autocomplete:'current-password', placeholder:'Passwort'});
+  const err = h('p',{class:'err', role:'alert'});
+  const btn = h('button',{class:'btn primary wide', type:'submit'}, 'Anmelden');
+  const form = h('form',{onsubmit: async e => {
+    e.preventDefault(); err.textContent = '';
+    if (!em.value.trim() || !pw.value){ err.textContent = 'Bitte E-Mail und Passwort eingeben.'; return; }
+    btn.disabled = true; btn.textContent = 'Anmelden …';
+    try { await FB.signIn(em.value.trim(), pw.value); }
+    catch (x) {
+      const c = x && x.code || '';
+      err.textContent = c.includes('network') ? 'Keine Internetverbindung.' : c.includes('too-many') ? 'Zu viele Versuche. Bitte kurz warten.' : 'E-Mail oder Passwort stimmt nicht.';
+      btn.disabled = false; btn.textContent = 'Anmelden';
+    }
+  }},
+    h('label',{class:'lb', style:'display:block;font-size:.85rem;color:var(--muted);margin:16px 0 5px'},'E-Mail'), em,
+    h('label',{class:'lb', style:'display:block;font-size:.85rem;color:var(--muted);margin:12px 0 5px'},'Passwort'), pw,
+    err, btn);
+  m.append(h('div',{class:'login'},
+    h('p',{class:'brand'},'Karteikasten'),
+    h('p',{class:'muted'},'Melde dich an. Dein Lernstand ist auf allen Geräten derselbe.'),
+    form,
+    h('button',{class:'btn ghost', onclick: async () => {
+      if (!em.value.trim()){ err.textContent = 'Gib oben deine E-Mail ein, dann schicken wir dir einen Link.'; return; }
+      try { await FB.resetPw(em.value.trim()); toast('Link zum Zurücksetzen wurde verschickt.'); }
+      catch (x) { err.textContent = 'Der Link konnte nicht verschickt werden. Stimmt die E-Mail?'; }
+    }}, 'Passwort vergessen?')));
+}
+
+/* ---------- First start ---------- */
+function renderSetup(){
+  const m = $('#main'); m.innerHTML = '';
+  const status = h('p',{class:'muted small', role:'status'});
+  const btns = [];
+  const busy = on => btns.forEach(b => b.disabled = on);
+  const b1 = h('button',{class:'btn primary wide', onclick: async () => {
+    busy(true); status.textContent = 'Wörter werden übernommen …';
+    try { await seedData((n,t) => status.textContent = `${n} von ${t} übernommen …`); toast('Vokabelliste übernommen'); }
+    catch (e) { console.error(e); status.textContent = 'Das hat nicht geklappt. Prüfe die Internetverbindung und versuche es nochmal.'; busy(false); }
+  }}, `Vokabelliste Deutsch – Ukrainisch übernehmen (${DATA.length} Wörter)`);
+  const b2 = h('button',{class:'btn wide', onclick:() => $('#jsonInput').click()}, 'Sicherung einlesen');
+  const b3 = h('button',{class:'btn wide', onclick: async () => { busy(true); await FB.set(R.meta(), { log:{}, sel:[], lastSrc:'' }).catch(syncErr); }}, 'Leer starten');
+  btns.push(b1, b2, b3);
+  m.append(h('div',{class:'login setup'},
+    h('p',{class:'brand'},'Willkommen'),
+    h('p',{class:'muted'},'Womit möchtest du starten? Das ist nur beim allerersten Mal nötig.'),
+    b1, b2, b3, status,
+    h('button',{class:'btn ghost', onclick:() => FB.signOut()}, 'Abmelden')));
+}
+async function seedData(onProg){
+  const pid = 'p1', ops = [];
+  ops.push(['set', R.project(pid), { name:'Deutsch – Ukrainisch', fl:'Deutsch', bl:'Українська', rev:false, np:20, o:1 }]);
+  DATA.forEach((r,i) => ops.push(['set', R.card('c'+i.toString(36)), { p:pid, a:r[0], b:r[1], n:'', src:r[2], s:0, d:null, f:null, img:false, o:i }]));
+  await runOps(ops, onProg);
+  await FB.set(R.meta(), { log:{}, sel:[pid], lastSrc:'' });
+}
+
+/* ---------- Learn home ---------- */
+function renderLearn(){
+  const m = $('#main'); m.innerHTML = '';
+  const sel = S.sel.filter(id => proj(id));
+  const list = h('div',{class:'plist'});
+  for (const p of S.projects){
+    const on = sel.includes(p.id), due = dueCount(p.id), nw = newLeft(p);
+    const cb = h('input',{type:'checkbox', checked:on, onchange:e => {
+      S.sel = e.target.checked ? [...sel, p.id] : sel.filter(x => x !== p.id); saveMeta(); renderLearn();
+    }});
+    list.append(h('div',{class:'prow'+(on?' on':'')},
+      h('label',null, cb, h('span',null, h('span',{class:'pname'},p.name),
+        h('span',{class:'pmeta'}, `${due} fällig, ${nw} neu heute`, p.rev ? ' (umgedreht)' : ''))),
+      h('button',{class:'iconbtn','aria-label':`Einstellungen für ${p.name}`, onclick:() => projectModal(p)}, svg(ICON.gear))
+    ));
+  }
+  const total = sel.reduce((n,id) => n + dueCount(id) + newLeft(proj(id)), 0);
+  m.append(h('h1',null,'Lernen'), list,
+    h('button',{class:'btn ghost', onclick:() => projectModal(null)}, '+ Neues Projekt anlegen'));
+  if (!S.projects.length) m.append(h('p',{class:'muted start'},'Lege ein Projekt an, um loszulegen.'));
+  else if (!sel.length) m.append(h('p',{class:'muted start'},'Wähle oben mindestens ein Projekt aus.'));
+  else if (!total) m.append(h('div',{class:'alldone'}, h('strong',null,'Für heute ist alles gelernt.'), h('div',{class:'small muted'},'Morgen geht’s weiter.')));
+  else m.append(h('button',{class:'btn primary wide start', onclick:() => startSession(sel)}, `Lernen starten (${total} Karten)`));
+}
+function startSession(sel){
+  const q = buildQueue(sel);
+  if (!q.length) return;
+  session = { q, total:q.length, done:0, revealed:false, undo:null, multi:sel.length > 1 };
+  render(); window.scrollTo(0,0);
+}
+
+/* ---------- Session ---------- */
+function renderSession(){
+  const m = $('#main'); m.innerHTML = '';
+  m.append(h('div',{class:'stop'},
+    h('button',{class:'iconbtn','aria-label':'Sitzung beenden', onclick:() => go('learn')}, svg(ICON.close)),
+    h('div',{class:'bar'}, h('i',{style:`width:${session.total ? session.done/session.total*100 : 0}%`})),
+    h('span',{class:'count'}, `noch ${session.q.length}`),
+    session.undo ? h('button',{class:'iconbtn','aria-label':'Letzte Antwort rückgängig', title:'Rückgängig', onclick:undo}, svg(ICON.undo)) : null
+  ));
+  while (session.q.length && !card(session.q[0])) session.q.shift();
+  if (!session.q.length){
+    m.append(h('div',{class:'finish'}, h('div',{class:'big'},'Geschafft!'),
+      h('p',{class:'muted'}, `Alle ${session.total} Karten sind für heute erledigt.`),
+      h('button',{class:'btn primary', onclick:() => go('learn')}, 'Zurück zur Übersicht')));
+    return;
+  }
+  const c = card(session.q[0]), p = proj(c.p) || { fl:'', bl:'', name:'' }, t = today();
+  const front = p.rev ? c.b : c.a, back = p.rev ? c.a : c.b;
+  const steps = h('div',{class:'steps','aria-hidden':'true'}, [1,2,3,4,5,6].map(i => h('i',{class: i <= c.s ? 'on' : null})));
+  const body = h('div',{class:'cbody'}, h('div',{class:'front', lang: p.rev ? 'uk' : 'de'}, front));
+  if (session.revealed){
+    body.append(h('div',{class:'back', lang: p.rev ? 'de' : 'uk'}, back));
+    if (c.n) body.append(h('div',{class:'note'}, c.n));
+    if (c.img){ const im = h('img',{class:'cimg', alt:''}); body.append(im); getImg(c.id).then(u => { if (u) im.src = u; else im.remove(); }); }
+  } else body.append(h('div',{class:'tap'},'Tippen zum Aufdecken'));
+  m.append(h('div',{class:'card', onclick: e => { if (!session.revealed && !e.target.closest('button')) reveal(); }},
+    h('div',{class:'chead'}, steps, h('span',{class:'slabel'}, stageName(c.s)),
+      session.multi ? h('span',{class:'proj'}, p.name) : null,
+      h('button',{class:'iconbtn','aria-label':'Karte bearbeiten', onclick:() => cardModal(c)}, svg(ICON.edit))),
+    body,
+    c.src ? h('div',{class:'src'}, c.src) : null));
+
+  const ans = h('div',{class:'answers'});
+  if (!session.revealed){
+    ans.append(h('button',{class:'reveal', onclick:reveal}, 'Lösung zeigen'));
+  } else {
+    const failed = c.f === t;
+    const yesTo = failed ? 1 : Math.min(MAX, c.s + 1);
+    ans.append(h('div',{class:'arow'},
+      h('button',{class:'abtn no', onclick:() => answer('no')}, 'Weiß ich nicht', h('small',null,'kommt gleich nochmal')),
+      h('button',{class:'abtn yes', onclick:() => answer('yes')}, 'Weiß ich', h('small',null, days(INT[yesTo])))));
+    if (!failed){
+      const jr = h('div',{class:'jrow'});
+      for (const k of [2,3]){ const ns = c.s + k; if (ns <= MAX) jr.append(h('button',{class:'jbtn', title:`Stufe ${ns}`, onclick:() => answer('j'+k)}, days(INT[ns]))); }
+      if (jr.children.length){ jr.prepend(h('span',{class:'jlabel'},'Oder direkt:')); ans.append(jr); }
+    } else ans.append(h('div',{class:'small muted', style:'text-align:center'},'Heute schon einmal nicht gewusst, darum zurück auf Stufe 1.'));
+  }
+  m.append(ans);
+}
+function reveal(){ session.revealed = true; renderSession(); }
+function answer(k){
+  const id = session.q[0], c = { ...card(id) }, t = today();
+  session.undo = { id, snap:{ ...card(id) }, q:[...session.q], done:session.done, log:JSON.parse(JSON.stringify(S.log)) };
+  let metaChanged = false;
+  if (c.s === 0){ const lg = S.log[c.p]; if (lg && lg.d === t) lg.n++; else S.log[c.p] = { d:t, n:1 }; metaChanged = true; }
+  if (k === 'no'){ c.s = 1; c.d = t; c.f = t; session.q.push(session.q.shift()); }
+  else {
+    const ns = c.f === t ? 1 : Math.min(MAX, c.s + (k === 'yes' ? 1 : k === 'j2' ? 2 : 3));
+    c.s = ns; c.d = addDays(INT[ns]); session.q.shift(); session.done++;
+  }
+  cardMap.set(id, c); S.cards = S.cards.map(x => x.id === id ? c : x);
+  saveCard(c); if (metaChanged) saveMeta();
+  session.revealed = false; renderSession();
+}
+function undo(){
+  const u = session.undo; if (!u) return;
+  cardMap.set(u.id, u.snap); S.cards = S.cards.map(x => x.id === u.id ? u.snap : x);
+  saveCard(u.snap);
+  if (JSON.stringify(S.log) !== JSON.stringify(u.log)){ S.log = u.log; saveMeta(); }
+  session.q = u.q; session.done = u.done; session.undo = null; session.revealed = true;
+  renderSession();
+}
+document.addEventListener('keydown', e => {
+  if (!session || !$('#modal').hidden || !session.q.length || e.target.matches('input,textarea,select')) return;
+  if (!session.revealed && (e.key === ' ' || e.key === 'Enter')){ e.preventDefault(); reveal(); }
+  else if (session.revealed && e.key === '1') answer('no');
+  else if (session.revealed && e.key === '2') answer('yes');
+});
+
+/* ---------- Words ---------- */
+function renderWords(){
+  const m = $('#main'); m.innerHTML = '';
+  if (!wf.p || !proj(wf.p)) wf.p = S.projects[0]?.id || null;
+  m.append(h('div',{class:'whead'}, h('h1',null,'Wörter'),
+    wf.p ? h('button',{class:'btn primary', onclick:() => cardModal(null, wf.p)}, '+ Wort') : null));
+  if (!wf.p){ m.append(h('p',{class:'muted'},'Lege zuerst unter „Lernen“ ein Projekt an.')); return; }
+  const tb = h('div',{class:'toolbar'});
+  tb.append(h('input',{class:'field search', type:'search', placeholder:'Suchen …', value:wf.q, 'aria-label':'Wörter durchsuchen',
+    oninput:e => { wf.q = e.target.value; wf.limit = 150; clearTimeout(renderWords.t); renderWords.t = setTimeout(fillList, 150); }}));
+  if (S.projects.length > 1){
+    tb.append(h('select',{class:'field','aria-label':'Projekt', onchange:e => { wf.p = e.target.value; wf.limit = 150; fillList(); }},
+      S.projects.map(p => h('option',{value:p.id, selected:p.id === wf.p}, p.name))));
+  }
+  const opts = [['all','Alle Stufen'],['due','Heute fällig'],['0','Neu'],...[1,2,3,4,5,6].map(i => [String(i), `Stufe ${i} (nach ${tage(INT[i])})`])];
+  tb.append(h('select',{class:'field','aria-label':'Stufe', onchange:e => { wf.s = e.target.value; wf.limit = 150; fillList(); }},
+    opts.map(([v,l]) => h('option',{value:v, selected:v === wf.s}, l))));
+  m.append(tb, h('p',{class:'small muted', id:'wcount'}), h('div',{class:'wlist', id:'wlist'}), h('div',{id:'wmore'}));
+  fillList();
+}
+function fillList(){
+  if (!proj(wf.p)) return renderWords();
+  const q = wf.q.trim().toLowerCase(), t = today();
+  const res = S.cards.filter(c => {
+    if (c.p !== wf.p) return false;
+    if (wf.s === 'due' && !isDue(c,t)) return false;
+    if (wf.s !== 'all' && wf.s !== 'due' && c.s !== +wf.s) return false;
+    if (q && !(c.a.toLowerCase().includes(q) || c.b.toLowerCase().includes(q) || (c.n||'').toLowerCase().includes(q) || (c.src||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  $('#wcount').textContent = `${res.length} ${res.length === 1 ? 'Wort' : 'Wörter'}`;
+  const list = $('#wlist'); list.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  res.slice(0, wf.limit).forEach(c => frag.append(h('button',{class:'wrow', onclick:() => cardModal(c)},
+    h('span',{class:'wt'}, h('span',{class:'wa'}, c.a), h('span',{class:'wb', lang:'uk'}, c.b)),
+    h('span',{class:'badge s'+c.s, title: c.s ? `Nächste Abfrage: ${c.d}` : 'Noch nicht gelernt'}, c.s === 0 ? 'Neu' : c.s))));
+  list.append(frag);
+  list.hidden = !res.length;
+  const more = $('#wmore'); more.innerHTML = '';
+  if (res.length > wf.limit) more.append(h('button',{class:'btn more', onclick:() => { wf.limit += 300; fillList(); }}, `Weitere ${Math.min(300, res.length - wf.limit)} anzeigen`));
+}
+
+/* ---------- Stats ---------- */
+function renderStats(){
+  const m = $('#main'); m.innerHTML = '';
+  if (statsP !== 'all' && !proj(statsP)) statsP = 'all';
+  const cards = S.cards.filter(c => statsP === 'all' || c.p === statsP);
+  const t = today(), cnt = [0,0,0,0,0,0,0];
+  let due = 0; cards.forEach(c => { cnt[c.s]++; if (isDue(c,t)) due++; });
+  m.append(h('h1',null,'Statistik'));
+  if (S.projects.length > 1){
+    m.append(h('div',{class:'toolbar'}, h('select',{class:'field','aria-label':'Projekt', onchange:e => { statsP = e.target.value; renderStats(); }},
+      h('option',{value:'all', selected:statsP === 'all'},'Alle Projekte'),
+      S.projects.map(p => h('option',{value:p.id, selected:p.id === statsP}, p.name)))));
+  }
+  m.append(h('div',{class:'figs'},
+    h('div',{class:'fig'}, h('b',null,cards.length), h('span',null,'Wörter gesamt')),
+    h('div',{class:'fig'}, h('b',null,due), h('span',null,'heute fällig')),
+    h('div',{class:'fig'}, h('b',null,cards.length - cnt[0]), h('span',null,'im Lernen'))));
+  const max = Math.max(1, ...cnt);
+  const bars = h('div',{class:'bars'});
+  for (let s = 0; s <= MAX; s++){
+    bars.append(h('div',{class:'brow'+(s===0?' new':'')},
+      h('span',{class:'bl'}, s === 0 ? 'Neu' : `Stufe ${s}`, h('small',null, s === 0 ? 'noch nicht gelernt' : `nach ${tage(INT[s])}`)),
+      h('span',{class:'bt'}, h('i',{style:`width:${cnt[s]/max*100}%`})),
+      h('span',{class:'bn'}, cnt[s])));
+  }
+  m.append(h('h2',null,'Wörter pro Stufe'), bars);
+  const off = !navigator.onLine;
+  m.append(h('h2',null,'Konto'),
+    h('p',{class:'small muted'}, `Angemeldet als ${userEmail}`),
+    h('div',{class:'sync'+(off ? ' off' : sync.pending ? ' pending' : '')}, h('i'),
+      off ? 'Offline. Änderungen werden übertragen, sobald wieder Internet da ist.' : sync.pending ? 'Änderungen werden übertragen …' : 'Alles synchronisiert.'),
+    h('h2',null,'Datensicherung'),
+    h('p',{class:'small muted'},'Der Lernstand wird automatisch gespeichert. Eine Sicherung als Datei ist trotzdem gut für den Notfall.'),
+    h('div',{class:'backup'},
+      h('button',{class:'btn', onclick:exportData}, 'Sicherung herunterladen'),
+      h('button',{class:'btn', onclick:() => $('#jsonInput').click()}, 'Sicherung einlesen')),
+    h('button',{class:'btn ghost', style:'margin-top:16px', onclick:() => { session = null; FB.signOut(); }}, 'Abmelden'));
+}
+async function exportData(){
+  let images = {};
+  try { (await FB.getAll(R.images())).forEach(d => images[d.id] = d.data.data); }
+  catch (e) { toast('Bilder konnten nicht geladen werden, Sicherung enthält nur Text.'); }
+  const json = JSON.stringify({ app:'karteikasten', v:2, exported:new Date().toISOString(),
+    state:{ projects:S.projects, cards:S.cards, log:S.log, sel:S.sel, lastSrc:S.lastSrc }, images });
+  const name = `karteikasten-sicherung-${today()}.json`;
+  const file = new File([json], name, { type:'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files:[file] }) && matchMedia('(pointer:coarse)').matches){ await navigator.share({ files:[file], title:name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = h('a',{ href:URL.createObjectURL(file), download:name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('#jsonInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  let obj;
+  try { obj = JSON.parse(await f.text()); } catch (err) { toast('Die Datei ist keine gültige Sicherung.'); return; }
+  if (!obj || obj.app !== 'karteikasten' || !obj.state || !Array.isArray(obj.state.cards) || !Array.isArray(obj.state.projects)){ toast('Die Datei ist keine Karteikasten-Sicherung.'); return; }
+  const np = obj.state.projects.length;
+  const status = h('p',{class:'small muted', role:'status'});
+  const go2 = h('button',{class:'btn primary', onclick: async () => {
+    go2.disabled = true;
+    try { await importBackup(obj, (n,t) => status.textContent = `${n} von ${t} übertragen …`); closeModal(); toast('Sicherung eingelesen'); }
+    catch (x) { console.error(x); status.textContent = 'Das Einlesen ist fehlgeschlagen. Prüfe die Internetverbindung.'; go2.disabled = false; }
+  }}, 'Ersetzen');
+  openModal(h('div',null, h('h2',null,'Sicherung einlesen?'),
+    h('p',null, `Die Sicherung enthält ${np} ${np===1?'Projekt':'Projekte'} und ${obj.state.cards.length} Wörter. Der aktuelle Stand wird auf allen Geräten vollständig ersetzt.`),
+    status, h('div',{class:'row2'}, h('button',{class:'btn', onclick:closeModal},'Abbrechen'), go2)));
+});
+async function importBackup(obj, onProg){
+  const st = obj.state, ops = [];
+  const oldImgs = S.cards.filter(c => c.img).map(c => c.id);
+  S.cards.forEach(c => ops.push(['del', R.card(c.id)]));
+  oldImgs.forEach(id => ops.push(['del', R.img(id)]));
+  S.projects.forEach(p => ops.push(['del', R.project(p.id)]));
+  st.projects.forEach((p,i) => { const { id, ...d } = p; ops.push(['set', R.project(id), { ...d, o: d.o ?? i }]); });
+  st.cards.forEach((c,i) => { const { id, ...d } = c; ops.push(['set', R.card(id), { n:'', src:'', f:null, img:false, ...d, o: d.o ?? i }]); });
+  await runOps(ops, onProg);
+  for (const [id, data] of Object.entries(obj.images || {})) await FB.set(R.img(id), { data });
+  imgCache.clear();
+  await FB.set(R.meta(), { log: st.log || {}, sel: st.sel || [], lastSrc: st.lastSrc || '' });
+}
+
+/* ---------- Modal ---------- */
+function openModal(content){ const s = $('#sheet'); s.innerHTML = ''; s.append(content); $('#modal').hidden = false; const f = s.querySelector('input,textarea,select'); if (f && matchMedia('(pointer:fine)').matches) f.focus(); }
+function closeModal(){ $('#modal').hidden = true; $('#sheet').innerHTML = ''; }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+function confirmBtn(label, fn){
+  const b = h('button',{class:'btn danger del'}, label);
+  b.addEventListener('click', () => { if (b.dataset.armed){ fn(); } else { b.dataset.armed = '1'; b.textContent = 'Wirklich löschen? Nochmal tippen'; } });
+  return b;
+}
+function compressImage(file, maxSide = 800, q = 0.72){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      let side = maxSide, quality = q, out;
+      do {
+        const k = Math.min(1, side / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas'); cv.width = Math.round(img.width*k); cv.height = Math.round(img.height*k);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        out = cv.toDataURL('image/jpeg', quality); side = Math.round(side*0.75); quality = Math.max(0.5, quality - 0.08);
+      } while (out.length > 700000 && side > 200);
+      URL.revokeObjectURL(url); res(out);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+function cardModal(c, defaultP){
+  const isNew = !c;
+  let pid = c ? c.p : (defaultP || S.sel.find(id => proj(id)) || S.projects[0]?.id);
+  if (!pid || !proj(pid)){ toast('Lege zuerst ein Projekt an.'); return; }
+  let imgState = { changed:false, data:null, has: !!(c && c.img) };
+  const fa = h('input',{class:'field', value:c ? c.a : ''});
+  const fb = h('input',{class:'field', value:c ? c.b : ''});
+  const fn = h('textarea',{class:'field'}); fn.value = c ? (c.n||'') : '';
+  const fs = h('input',{class:'field', list:'srclist', value:c ? (c.src||'') : (S.lastSrc||''), placeholder:'z. B. Lehrbuch Lektion 13 oder Gespräch'});
+  const srcs = [...new Set(S.cards.map(x => x.src).filter(Boolean))].slice(-60).reverse();
+  const dl = h('datalist',{id:'srclist'}, srcs.map(s => h('option',{value:s})));
+  const la = h('label',{class:'lb'}), lbb = h('label',{class:'lb'});
+  const setLabels = () => { const p = proj(pid); la.textContent = p.fl || 'Vorderseite'; lbb.textContent = p.bl || 'Rückseite'; };
+  setLabels();
+  const imgBox = h('div',{class:'imgbox'});
+  const drawImg = async () => {
+    imgBox.innerHTML = '';
+    const src = imgState.changed ? imgState.data : (imgState.has ? await getImg(c.id) : null);
+    if (src) imgBox.append(h('img',{src, alt:''}), h('button',{class:'btn', onclick:() => { imgState = { changed:true, data:null, has:false }; drawImg(); }}, 'Bild entfernen'));
+    imgBox.append(h('button',{class:'btn', onclick:pickImg}, src ? 'Anderes Bild' : 'Bild hinzufügen'));
+  };
+  const pickImg = () => {
+    const inp = $('#imgInput');
+    inp.onchange = async () => { const f = inp.files[0]; inp.value = ''; if (!f) return;
+      try { imgState = { changed:true, data: await compressImage(f), has:true }; drawImg(); } catch (e) { toast('Das Bild konnte nicht gelesen werden.'); } };
+    inp.click();
+  };
+  drawImg();
+  const wrap = h('div',null, h('h2',null, isNew ? 'Wort hinzufügen' : 'Karte bearbeiten'));
+  if (isNew && S.projects.length > 1){
+    wrap.append(h('label',{class:'lb'},'Projekt'), h('select',{class:'field', onchange:e => { pid = e.target.value; setLabels(); }},
+      S.projects.map(p => h('option',{value:p.id, selected:p.id === pid}, p.name))));
+  }
+  wrap.append(la, fa, lbb, fb, h('label',{class:'lb'},'Notiz'), fn, h('label',{class:'lb'},'Bild'), imgBox, h('label',{class:'lb'},'Quelle'), fs, dl);
+  if (c && c.s > 0) wrap.append(h('p',{class:'small muted'}, `${stageName(c.s)}, nächste Abfrage am ${c.d.split('-').reverse().join('.')}`));
+  wrap.append(h('div',{class:'row2'},
+    h('button',{class:'btn', onclick:closeModal}, 'Abbrechen'),
+    h('button',{class:'btn primary', onclick: () => {
+      const a = fa.value.trim(), b = fb.value.trim();
+      if (!a || !b){ toast('Bitte Wort und Übersetzung ausfüllen.'); return; }
+      const base = isNew ? { id:uid(), p:pid, s:0, d:null, f:null, img:false, o:Date.now() } : { ...(card(c.id) || c) };
+      const target = { ...base, a, b, n:fn.value.trim(), src:fs.value.trim() };
+      if (imgState.changed){
+        if (imgState.data){ FB.set(R.img(target.id), { data:imgState.data }).catch(syncErr); imgCache.set(target.id, imgState.data); target.img = true; }
+        else { FB.del(R.img(target.id)).catch(()=>{}); imgCache.delete(target.id); target.img = false; }
+      }
+      saveCard(target);
+      if (target.src && target.src !== S.lastSrc){ S.lastSrc = target.src; saveMeta(); }
+      closeModal(); toast(isNew ? 'Wort hinzugefügt' : 'Gespeichert');
+    }}, isNew ? 'Hinzufügen' : 'Speichern')));
+  if (c) wrap.append(confirmBtn('Wort löschen', () => {
+    FB.del(R.card(c.id)).catch(syncErr);
+    if (c.img) FB.del(R.img(c.id)).catch(()=>{});
+    if (session){ session.q = session.q.filter(x => x !== c.id); session.total = session.done + session.q.length; if (session.undo && session.undo.id === c.id) session.undo = null; }
+    closeModal(); toast('Wort gelöscht');
+  }));
+  openModal(wrap);
+}
+function projectModal(p){
+  const isNew = !p;
+  const fname = h('input',{class:'field', value:p ? p.name : '', placeholder:'z. B. Deutsch – Spanisch'});
+  const ffl = h('input',{class:'field', value:p ? p.fl : 'Deutsch'});
+  const fbl = h('input',{class:'field', value:p ? p.bl : ''});
+  const fnp = h('input',{class:'field', type:'number', min:'0', max:'500', inputmode:'numeric', value:p ? p.np : 20});
+  let rev = p ? !!p.rev : false;
+  const tog = h('div',{class:'tog'});
+  const drawTog = () => { tog.innerHTML = ''; [false,true].forEach(v => tog.append(h('button',{'aria-pressed':String(rev === v), onclick:() => { rev = v; drawTog(); }},
+    (v ? (fbl.value || 'Rückseite') : (ffl.value || 'Vorderseite')) + ' zuerst'))); };
+  ffl.addEventListener('input', drawTog); fbl.addEventListener('input', drawTog); drawTog();
+  const wrap = h('div',null, h('h2',null, isNew ? 'Neues Projekt' : 'Projekt-Einstellungen'),
+    h('label',{class:'lb'},'Name'), fname,
+    h('label',{class:'lb'},'Sprache Vorderseite'), ffl,
+    h('label',{class:'lb'},'Sprache Rückseite'), fbl,
+    h('label',{class:'lb'},'Was wird beim Lernen zuerst gezeigt?'), tog,
+    h('label',{class:'lb'},'Neue Wörter pro Tag'), fnp,
+    h('div',{class:'row2'},
+      h('button',{class:'btn', onclick:closeModal}, 'Abbrechen'),
+      h('button',{class:'btn primary', onclick:() => {
+        const name = fname.value.trim(); if (!name){ toast('Bitte einen Namen eingeben.'); return; }
+        const np = Math.max(0, Math.min(500, parseInt(fnp.value, 10) || 0));
+        const d = { name, fl:ffl.value.trim()||'Vorderseite', bl:fbl.value.trim()||'Rückseite', rev, np };
+        if (isNew){ const id = uid(); saveProject({ id, ...d, o:Date.now() }); S.sel = [...S.sel, id]; saveMeta(); }
+        else saveProject({ ...p, ...d });
+        closeModal(); toast(isNew ? 'Projekt angelegt' : 'Gespeichert');
+      }}, isNew ? 'Anlegen' : 'Speichern')));
+  if (p){
+    const mine = S.cards.filter(c => c.p === p.id);
+    wrap.append(confirmBtn(`Projekt mit ${mine.length} Wörtern löschen`, async () => {
+      closeModal(); toast('Projekt wird gelöscht …');
+      const ops = [];
+      mine.forEach(c => { ops.push(['del', R.card(c.id)]); if (c.img) ops.push(['del', R.img(c.id)]); });
+      ops.push(['del', R.project(p.id)]);
+      try { await runOps(ops); S.sel = S.sel.filter(x => x !== p.id); delete S.log[p.id]; saveMeta(); toast('Projekt gelöscht'); }
+      catch (e) { syncErr(e); }
+    }));
+  }
+  openModal(wrap);
+}
+
+/* ---------- boot ---------- */
+(async function boot(){
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (!window.__FB_MOCK__ && String(FIREBASE_CONFIG.apiKey).startsWith('HIER')){
+    bootMsg = 'Die App ist noch nicht mit Firebase verbunden. Trage die Firebase-Konfiguration oben in der Datei index.html ein (siehe Anleitung).';
+    return render();
+  }
+  try { FB = await loadFirebase(FIREBASE_CONFIG); }
+  catch (e) { console.error(e); bootMsg = 'Die App konnte nicht starten. Prüfe die Internetverbindung und lade die Seite neu.'; return render(); }
+  FB.onAuth(u => {
+    session = null; closeModal();
+    if (u){ U = u.uid; userEmail = u.email || ''; bootMsg = 'Lädt …'; listen(); }
+    else { U = null; stopListen(); S = { projects:[], cards:[], log:{}, sel:[], lastSrc:'' }; cardMap.clear(); }
+    render();
+  });
+})();
+
+</script>
+</body>
+</html>
